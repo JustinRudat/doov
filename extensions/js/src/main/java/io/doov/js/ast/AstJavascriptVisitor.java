@@ -3,14 +3,10 @@
  */
 package io.doov.js.ast;
 
-import static io.doov.core.dsl.meta.DefaultOperator.*;
-
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-
-import io.doov.core.dsl.meta.*;
+import io.doov.core.dsl.meta.DefaultOperator;
+import io.doov.core.dsl.meta.Element;
+import io.doov.core.dsl.meta.Metadata;
+import io.doov.core.dsl.meta.WhenMetadata;
 import io.doov.core.dsl.meta.ast.AbstractAstVisitor;
 import io.doov.core.dsl.meta.i18n.ResourceProvider;
 import io.doov.core.dsl.meta.predicate.BinaryPredicateMetadata;
@@ -19,9 +15,18 @@ import io.doov.core.dsl.meta.predicate.NaryPredicateMetadata;
 import io.doov.core.dsl.meta.predicate.UnaryPredicateMetadata;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Locale;
+
+import static io.doov.core.dsl.meta.DefaultOperator.*;
+
 public class AstJavascriptVisitor extends AbstractAstVisitor {
 
-    private final OutputStream ops;
+    protected final OutputStream ops;
     protected final ResourceProvider bundle;
     protected final Locale locale;
 
@@ -30,11 +35,32 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
     private int end_with_count = 0;     // define the number of 'start_with' rule used for closing parenthesis purpose
     private int use_regexp = 0;         // boolean as an int to know if we are in a regexp for closing parenthesis purpose
     private int is_match = 0;             // boolean as an int to know if we are in a matching rule for closing parenthesis purpose
+    private ArrayList<Integer> countDateOperators = new ArrayList<>(); // allow to count and separate date operator on their respective arguments
+    private ArrayList<DefaultOperator> dateOpeElem = new ArrayList<>();
 
     public AstJavascriptVisitor(OutputStream ops, ResourceProvider bundle, Locale locale) {
         this.ops = ops;
         this.bundle = bundle;
         this.locale = locale;
+        initializeDateOperator();
+    }
+
+    private void initializeDateOperator() {
+        dateOpeElem.add(plus);
+        dateOpeElem.add(minus);
+        dateOpeElem.add(today);
+        dateOpeElem.add(today_minus);
+        dateOpeElem.add(today_minus);
+        dateOpeElem.add(first_day_of_month);
+        dateOpeElem.add(first_day_of_year);
+        dateOpeElem.add(first_day_of_next_month);
+        dateOpeElem.add(first_day_of_next_year);
+        dateOpeElem.add(first_day_of_this_month);
+        dateOpeElem.add(first_day_of_this_year);
+        dateOpeElem.add(last_day_of_month);
+        dateOpeElem.add(last_day_of_year);
+        dateOpeElem.add(last_day_of_this_month);
+        dateOpeElem.add(last_day_of_this_year);
     }
 
     @Override
@@ -132,9 +158,22 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
     @Override
     public void startLeaf(LeafPredicateMetadata<?> metadata, int depth) {
         ArrayDeque<Element> stack = new ArrayDeque<>();    //using arrayDeque to store the fields
+        final int[] chainDateOpe = new int[1];
+        chainDateOpe[0] = -1;
         metadata.elements().forEach(element -> {
             switch (element.getType()) {
                 case OPERATOR:
+                    if (dateOpeElem.contains(element.getReadable())) {
+                        if (chainDateOpe[0] == -1) {
+                            chainDateOpe[0] = 0;
+                            countDateOperators.add(1);
+                        } else {
+                            countDateOperators.set(countDateOperators.size() - 1,
+                                    countDateOperators.get(countDateOperators.size() - 1) + 1);
+                        }
+                    } else if (chainDateOpe[0] != -1) {
+                        chainDateOpe[0] = -1;
+                    }
                     if (element.getReadable() == age_at
                             || element.getReadable() == as_a_number                       // checking for special cases
                             || element.getReadable() == as_string || element.getReadable() == before
@@ -273,9 +312,18 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
                 write(" * ");
                 break;
             case equals:
-                write(" === ");
+                boolean testDateOpe = false;
+                if (dateOpeElem.contains(stack.getFirst().getReadable())) {
+                    write(".isSame(");
+                    testDateOpe = true;
+                } else {
+                    write(" === ");
+                }
                 stackTmp.add(stack.pollFirst());
                 manageStack(stackTmp);
+                if (testDateOpe) {
+                    write(")");
+                }
                 break;
             case not_equals:
                 write(" !== ");
@@ -300,12 +348,12 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
                         "\'" + stack.pollFirst().toString() + "\')");
                 break;
             case after:
-                write("moment(" + stack.pollFirst().toString() + "" +
+                write("moment(" + stack.pollFirst().toString() +
                         ").isAfter(moment(" + stack.pollFirst().toString() + ")");
                 parenthese_depth++;
                 break;
             case after_or_equals:
-                write("moment(" + stack.pollFirst().toString() + "" +
+                write("moment(" + stack.pollFirst().toString() +
                         ").isSameOrAfter(moment(" + stack.pollFirst().toString() + ")");
                 parenthese_depth++;
                 break;
@@ -313,8 +361,9 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
                 write("Math.round(Math.abs(moment(");               // using Math.round(...)
                 stackTmp.add(stack.pollFirst());                        // ex : diff(31may,31may + 1month) = 0.96
                 manageStack(stackTmp);
+                write(")");
                 formatAgeAtOperator(stack);
-                write(").diff(");                                   //Math.abs so the date order doesn't matter
+                write(".diff(");                                   //Math.abs so the date order doesn't matter
                 write("moment(");
                 stackTmp.add(stack.pollFirst());
                 manageStack(stackTmp);
@@ -323,12 +372,12 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
                 write(", \'years\')))");
                 break;
             case before:
-                write("moment(" + stack.pollFirst().toString() + "" +
+                write("moment(" + stack.pollFirst().toString() +
                         ").isBefore(" + stack.pollFirst().toString());
                 parenthese_depth++;
                 break;
             case before_or_equals:
-                write("moment(" + stack.pollFirst().toString() + "" +
+                write("moment(" + stack.pollFirst().toString() +
                         ").isSameOrBefore(" + stack.pollFirst().toString());
                 parenthese_depth++;
                 break;
@@ -369,6 +418,7 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
                 break;
             case is:
                 write(" === ");
+
                 break;
             case lesser_than:
                 write(" < ");
@@ -398,37 +448,37 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
                 write(".length");
                 break;
             case today:
-                write("moment()");
+                write("moment(moment().format(\"YYYY-MM-DD\"))");
                 break;
             case today_plus:
-                write("moment().add(");
+                write("moment(moment().format(\"YYYY-MM-DD\")).add(");
                 break;
             case today_minus:
-                write("moment().subtract(");
+                write("moment(moment().format(\"YYYY-MM-DD\")).subtract(");
                 break;
             case first_day_of_this_month:
-                write("moment().startOf('month')");
+                write("moment(moment().format(\"YYYY-MM-DD\")).startOf('month')");
                 break;
             case first_day_of_this_year:
-                write("moment().startOf('year')");
+                write("moment(moment().format(\"YYYY-MM-DD\")).startOf('year')");
                 break;
             case last_day_of_this_month:
-                write("moment().endOf('month')");
+                write("moment(moment().format(\"YYYY-MM-DD\")).endOf('month')");
                 break;
             case last_day_of_this_year:
-                write("moment().endOf('year')");
+                write("moment(moment().format(\"YYYY-MM-DD\")).endOf('year')");
                 break;
             case first_day_of_month:
                 write(".startOf('month')");
                 break;
             case first_day_of_next_month:
-                write("moment().add(1,'month').startOf('month')");
+                write("moment(moment().format(\"YYYY-MM-DD\")).add(1,'month').startOf('month')");
                 break;
             case first_day_of_year:
                 write(".startOf('year')");
                 break;
             case first_day_of_next_year:
-                write("moment().add(1,'year').startOf('year')");
+                write("moment(moment().format(\"YYYY-MM-DD\")).add(1,'year').startOf('year')");
                 break;
             case last_day_of_month:
                 write(".endOf('month')");
@@ -447,21 +497,31 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
      * @param stack the deque of the parameters not translated yet to Javascript predicate
      */
     private void formatAgeAtOperator(ArrayDeque<Element> stack) {
-        ArrayDeque<Element> stackTmp = new ArrayDeque<>();
-        if (stack.getFirst().getReadable() == with || stack.getFirst().getReadable() == plus
-                || stack.getFirst().getReadable() == minus) {
-            if (stack.getFirst().getReadable() == with) {
-                stack.pollFirst();
-                stackTmp.add(stack.pollFirst());
-                manageStack(stackTmp);
-            } else {                                      // working on plus and minus operators
-                Element ope = stack.pollFirst();        // need the three first elements of the stack to manage
-                Element duration = stack.pollFirst();   // these operators
-                Element unit = stack.pollFirst();
-                stackTmp.add(ope);
-                stackTmp.add(duration);
-                stackTmp.add(unit);
-                manageStack(stackTmp);
+        if (countDateOperators.size() > 0) {
+            while (countDateOperators.size() > 0 && countDateOperators.get(0) > 0) {
+                ArrayDeque<Element> stackTmp = new ArrayDeque<>();
+                if (stack.getFirst().getReadable() == with || stack.getFirst().getReadable() == plus
+                        || stack.getFirst().getReadable() == minus) {
+                    if (stack.getFirst().getReadable() == with) {
+                        stack.pollFirst();
+                        stackTmp.add(stack.pollFirst());
+                        manageStack(stackTmp);
+                    } else {                                      // working on plus and minus operators
+                        Element ope = stack.pollFirst();        // need the three first elements of the stack to manage
+                        Element duration = stack.pollFirst();   // these operators
+                        Element unit = stack.pollFirst();
+                        stackTmp.add(ope);
+                        stackTmp.add(duration);
+                        stackTmp.add(unit);
+                        manageStack(stackTmp);
+                    }
+                    countDateOperators.set(0, countDateOperators.get(0) - 1);
+                    if (countDateOperators.size() > 0 && countDateOperators.get(0) == 0) {
+                        countDateOperators.remove(0);
+                    }
+                } else {
+                    break;
+                }
             }
         }
     }
