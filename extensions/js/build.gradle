@@ -8,8 +8,8 @@ dependencies {
     testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: junitJupiterVersion
     testCompile group: 'org.assertj', name: 'assertj-core', version: assertjVersion
     testCompile group: 'org.junit.platform', name: 'junit-platform-launcher', version: junitPlatformLauncherVersion
-}
+    if (isReleaseVersion) {
+        javadoc.destinationDir = file("${rootProject.projectDir}/docs/site/extensions/js/apidocs")
 
-if (isReleaseVersion) {
-    javadoc.destinationDir = file("${rootProject.projectDir}/docs/site/extensions/js/apidocs")
+    }
 }
