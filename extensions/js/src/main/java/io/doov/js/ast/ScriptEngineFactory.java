@@ -1,10 +1,17 @@
 package io.doov.js.ast;
 
+import io.doov.core.FieldModel;
+
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 
 public class ScriptEngineFactory {
 
@@ -24,6 +31,26 @@ public class ScriptEngineFactory {
         return engine;
     }
 
+    public static String fieldModelToJS(FieldModel model) {
+        ByteArrayOutputStream opsTmp = new ByteArrayOutputStream();
+        model.getFieldInfos().stream().forEach(fieldName ->
+        {
+            try {
+                if(fieldName.type()== LocalDate.class || fieldName.type() == String.class){
+                    opsTmp.write(("var " + fieldName.readable() + " = \'" + model.getAsString(fieldName) + "\' ;\n").getBytes(StandardCharsets.UTF_8));
+                }else{
+                    opsTmp.write(("var " + fieldName.readable() + " = " + model.getAsString(fieldName) + " ;\n").getBytes(StandardCharsets.UTF_8));
+
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+        model.stream().forEach(entry -> {
+
+        });
+        return new String(opsTmp.toByteArray(), Charset.forName("UTF-8"));
+    }
 }
 
 

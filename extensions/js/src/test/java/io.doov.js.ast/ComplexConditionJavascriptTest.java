@@ -1,22 +1,19 @@
 package io.doov.js.ast;
 
-import io.doov.core.FieldModel;
 import io.doov.core.dsl.field.types.IntegerFieldInfo;
 import io.doov.core.dsl.field.types.LocalDateFieldInfo;
+import io.doov.core.dsl.field.types.StringFieldInfo;
 import io.doov.core.dsl.lang.ValidationRule;
 import io.doov.core.dsl.meta.i18n.ResourceBundleProvider;
 import io.doov.core.dsl.runtime.GenericModel;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.Locale;
 
@@ -27,13 +24,17 @@ import static java.time.temporal.ChronoUnit.MONTHS;
 import static java.time.temporal.ChronoUnit.YEARS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class ReductionJavascriptTest {
-
+public class ComplexConditionJavascriptTest {
+    private static Locale LOCALE = Locale.US;
     private ValidationRule rule;
-    private GenericModel model;
-    private LocalDateFieldInfo userbd;
-    private IntegerFieldInfo configMaxEmailSize;
-    private String request;
+    private GenericModel model = new GenericModel();
+    private StringFieldInfo A = model.stringField("value", "A"),
+            B = model.stringField(null, "B"),
+            C = model.stringField("value", "C"),
+            D = model.stringField("","D");
+    private LocalDateFieldInfo userbd = model.localDateField(LocalDate.of(1980, 1, 1), "userbd");;
+    private IntegerFieldInfo configMaxEmailSize = model.intField(3, "maxsize");
+    private String request, result;
 
     private static ByteArrayOutputStream ops;
     private static ResourceBundleProvider bundle;
@@ -48,16 +49,6 @@ public class ReductionJavascriptTest {
         visitor = new AstJavascriptVisitor(ops, bundle, Locale.ENGLISH);
     }
 
-    @BeforeEach
-    void beforeEach() throws ScriptException {
-        this.model = new GenericModel();
-        this.userbd = model.localDateField(LocalDate.of(1980, 1, 1), "userbd");
-        this.configMaxEmailSize = model.intField(3, "maxsize");
-        ops.reset();
-        String varJS = fieldModelToJS(model);
-        engine.eval(varJS);
-    }
-
     @Test
     void reduce_times_chaining() {
         rule = when(configMaxEmailSize.times(2).times(2).times(2)
@@ -66,7 +57,8 @@ public class ReductionJavascriptTest {
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         try {
-            assertEquals("true", engine.eval(request).toString());
+            result = engine.eval(request).toString();
+            assertEquals("false", result);
         } catch (ScriptException e) {
             e.printStackTrace();
         }
@@ -82,7 +74,8 @@ public class ReductionJavascriptTest {
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         try {
-            assertEquals("true", engine.eval(request).toString());
+            result = engine.eval(request).toString();
+            assertEquals("false", result);
         } catch (ScriptException e) {
             e.printStackTrace();
         }
@@ -96,7 +89,8 @@ public class ReductionJavascriptTest {
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         try {
-            assertEquals("true", engine.eval(request).toString());
+            result = engine.eval(request).toString();
+            assertEquals("false", result);
         } catch (ScriptException e) {
             e.printStackTrace();
         }
@@ -109,7 +103,8 @@ public class ReductionJavascriptTest {
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         try {
-            assertEquals("true", engine.eval(request).toString());
+            result = engine.eval(request).toString();
+            assertEquals("false", result);
         } catch (ScriptException e) {
             e.printStackTrace();
         }
@@ -121,7 +116,8 @@ public class ReductionJavascriptTest {
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         try {
-            assertEquals("true", engine.eval(request).toString());
+            result = engine.eval(request).toString();
+            assertEquals("false", result);
         } catch (ScriptException e) {
             e.printStackTrace();
         }
@@ -129,27 +125,6 @@ public class ReductionJavascriptTest {
 
     @AfterEach
     void afterEach() {
-        System.out.println("> " + request);
-    }
-
-    private String fieldModelToJS(FieldModel model) {
-        ByteArrayOutputStream opsTmp = new ByteArrayOutputStream();
-        model.getFieldInfos().stream().forEach(fieldName ->
-        {
-            try {
-                if(fieldName.type()==LocalDate.class || fieldName.type() == String.class){
-                    opsTmp.write(("var " + fieldName.readable() + " = \'" + model.getAsString(fieldName) + "\' ;\n").getBytes(StandardCharsets.UTF_8));
-                }else{
-                    opsTmp.write(("var " + fieldName.readable() + " = " + model.getAsString(fieldName) + " ;\n").getBytes(StandardCharsets.UTF_8));
-
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
-        model.stream().forEach(entry -> {
-
-        });
-        return new String(opsTmp.toByteArray(), Charset.forName("UTF-8"));
+        System.out.println(request + " -> " + result);
     }
 }
