@@ -289,7 +289,7 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
                 write(" === ( null || undefined || \"\" ) ");
                 break;
             case is_not_null:
-                write(" !== ( null || undefined || \"\" ) ");
+                write(" !== ( null && undefined && \"\" ) ");
                 break;
             case minus:
                 write(".subtract(" + stack.pollFirst().toString() + "," +
