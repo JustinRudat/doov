@@ -1,6 +1,8 @@
 package io.doov.js.ast;
 
 import io.doov.core.FieldModel;
+import io.doov.core.dsl.meta.Element;
+import io.doov.core.dsl.runtime.GenericModel;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -12,6 +14,9 @@ import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.util.ArrayList;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class ScriptEngineFactory {
 
@@ -36,10 +41,19 @@ public class ScriptEngineFactory {
         model.getFieldInfos().stream().forEach(fieldName ->
         {
             try {
-                if(fieldName.type()== LocalDate.class || fieldName.type() == String.class){
-                    opsTmp.write(("var " + fieldName.readable() + " = \'" + model.getAsString(fieldName) + "\' ;\n").getBytes(StandardCharsets.UTF_8));
-                }else{
-                    opsTmp.write(("var " + fieldName.readable() + " = " + model.getAsString(fieldName) + " ;\n").getBytes(StandardCharsets.UTF_8));
+                if (fieldName.type() == LocalDate.class || fieldName.type() == String.class) {
+                    opsTmp.write(("var " + fieldName.readable() + " = \'" + model.getAsString(fieldName) + "\' ;\n").getBytes(UTF_8));
+                }else if(fieldName.type().getName().endsWith("ArrayList")){
+                    opsTmp.write(("var " + fieldName.readable() + " = [").getBytes(UTF_8));
+                    ArrayList<Element> test = new ArrayList<>(model.get(fieldName.id()));
+                    while(test.size()>1){
+                        opsTmp.write(("\'"+ test.remove(0) + "\', ").getBytes(UTF_8));
+                    }
+                    opsTmp.write(("\'"+ test.remove(0) + "\'];").getBytes(UTF_8));
+                }
+
+                else{
+                    opsTmp.write(("var " + fieldName.readable() + " = " + model.getAsString(fieldName) + " ;\n").getBytes(UTF_8));
 
                 }
             } catch (IOException e) {

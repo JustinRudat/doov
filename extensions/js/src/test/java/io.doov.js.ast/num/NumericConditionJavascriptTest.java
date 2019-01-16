@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class NumericConditionJavascriptTest {
     private static Locale LOCALE = Locale.US;
     private ValidationRule rule;
-    private GenericModel model = new GenericModel();
+    private static GenericModel model = new GenericModel();
     private IntegerFieldInfo A = model.intField(1, "A"),
             B = model.intField(2, "B");
     private String request, result = "";
@@ -45,8 +45,7 @@ public class NumericConditionJavascriptTest {
     @BeforeEach
     void beforeEach() throws ScriptException {
         ops.reset();
-        String varJS = fieldModelToJS(model);
-        engine.eval(varJS);
+        engine.eval(fieldModelToJS(model));
     }
 
     @Test
@@ -152,7 +151,6 @@ public class NumericConditionJavascriptTest {
             e.printStackTrace();
         }
     }
-
 
 
     @AfterEach
