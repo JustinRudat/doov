@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TemporalConditionJavascriptTest {
     private ValidationRule rule;
-    private GenericModel model = new GenericModel();
+    private static GenericModel model = new GenericModel();
     private LocalDateFieldInfo A = model.localDateField(LocalDate.now(), "A"),
             B = model.localDateField(LocalDate.now().plusDays(1), "B");
     private String request, result = "";
@@ -46,8 +46,7 @@ public class TemporalConditionJavascriptTest {
     @BeforeEach
     void beforeEach() throws ScriptException {
         ops.reset();
-        String varJS = fieldModelToJS(model);
-        engine.eval(varJS);
+        engine.eval(fieldModelToJS(model));
     }
 
     @Test
@@ -130,6 +129,7 @@ public class TemporalConditionJavascriptTest {
 
     @Test
     void eval_after_value() {
+        System.out.println(A.toString());
         rule = when(A.after(LocalDate.of(2100,1,1))).validate();
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
@@ -161,7 +161,7 @@ public class TemporalConditionJavascriptTest {
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         try {
             result = engine.eval(request).toString();
-            assertEquals("false", result);
+            assertEquals("true", result);
         } catch (ScriptException e) {
             e.printStackTrace();
         }

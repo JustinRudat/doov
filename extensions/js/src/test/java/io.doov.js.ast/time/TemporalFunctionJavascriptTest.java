@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TemporalFunctionJavascriptTest {
     private ValidationRule rule;
-    private GenericModel model = new GenericModel();
+    private static GenericModel model = new GenericModel();
     private LocalDateFieldInfo A = model.localDateField(LocalDate.now(), "A");
     private IntegerFieldInfo B = model.intField(1, "B");
     private String request, result = "";
@@ -48,8 +48,7 @@ public class TemporalFunctionJavascriptTest {
     @BeforeEach
     void beforeEach() throws ScriptException {
         ops.reset();
-        String varJS = fieldModelToJS(model);
-        engine.eval(varJS);
+        engine.eval(fieldModelToJS(model));
     }
 
     @Test
@@ -105,7 +104,7 @@ public class TemporalFunctionJavascriptTest {
     }
 
     @Test
-    void eval_() {
+    void eval_plus_field() {
         rule = when(A.plus(B, ChronoUnit.DAYS).eq(LocalDate.of(1,1,1))).validate();
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
