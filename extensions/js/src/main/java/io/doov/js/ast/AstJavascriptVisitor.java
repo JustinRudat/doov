@@ -30,11 +30,11 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
     protected final ResourceProvider bundle;
     protected final Locale locale;
 
-    private int parenthese_depth = 0;   // define the number of parenthesis to close before ending the rule rewriting
-    private int start_with_count = 0;   // define the number of 'start_with' rule used for closing parenthesis purpose
-    private int end_with_count = 0;     // define the number of 'start_with' rule used for closing parenthesis purpose
-    private int use_regexp = 0;         // boolean as an int to know if we are in a regexp for closing parenthesis purpose
-    private int is_match = 0;             // boolean as an int to know if we are in a matching rule for closing parenthesis purpose
+    private int parentheseDepth = 0;   // define the number of parenthesis to close before ending the rule rewriting
+    private int startWithCount = 0;   // define the number of 'start_with' rule used for closing parenthesis purpose
+    private int endWithCount = 0;     // define the number of 'start_with' rule used for closing parenthesis purpose
+    private int useRegexp = 0;         // boolean as an int to know if we are in a regexp for closing parenthesis purpose
+    private int isMatch = 0;             // boolean as an int to know if we are in a matching rule for closing parenthesis purpose
     private ArrayList<Integer> countDateOperators = new ArrayList<>(); // allow to count and separate date operator on their respective arguments
     private ArrayList<DefaultOperator> dateOpeElem = new ArrayList<>();
 
@@ -200,9 +200,9 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
             }
         });
         manageStack(stack);
-        while (parenthese_depth > 0) {
+        while (parentheseDepth > 0) {
             write(")");
-            parenthese_depth--;
+            parentheseDepth--;
         }
     }
 
@@ -234,6 +234,8 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
                     manageOperator((DefaultOperator) e.getReadable(), stack);
                     break;
                 case VALUE:
+                    System.out.println(e.getType());
+                    System.out.println(e);
                     if (StringUtils.isNumeric(e.toString())) {
                         write(e.toString());
                     } else {
@@ -241,23 +243,23 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
                     }
                     break;
                 case STRING_VALUE:
-                    if (use_regexp == 1) {
+                    if (useRegexp == 1) {
                         String tmp = e.toString();
-                        if (is_match == 1) {
-                            is_match = 0;
+                        if (isMatch == 1) {
+                            isMatch = 0;
                         } else {
                             tmp = formatRegexp(tmp);
                         }
                         write(tmp);
-                        if (start_with_count > 0) {
+                        if (startWithCount > 0) {
                             write(".*");
-                            start_with_count--;
-                        } else if (end_with_count > 0) {
+                            startWithCount--;
+                        } else if (endWithCount > 0) {
                             write("$");
-                            end_with_count--;
+                            endWithCount--;
                         }
                         write("/");
-                        use_regexp = 0;
+                        useRegexp = 0;
                     } else {
                         write("\'" + e.toString() + "\'");
                     }
@@ -290,13 +292,17 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
             case as_a_number:
                 if (stack.size() > 0) {
                     write("parseInt(");
-                    write(stack.pollFirst().toString());
+                    stackTmp.add(stack.pollFirst());
+                    manageStack(stackTmp);
                     write(")");
                 }
                 break;
             case as_string:
                 if (stack.size() > 0) {
-                    write("String(" + stack.pollFirst().toString() + ")");
+                    write("String(");
+                    stackTmp.add(stack.pollFirst());
+                    manageStack(stackTmp);
+                    write(")");
                 }
                 break;
             case not:
@@ -328,9 +334,8 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
             case not_equals:
                 write(" !== ");
                 if (stack != null) {
-                    write(stack.pollFirst().toString());
-                } else if (stack != null) {
-                    write(stack.pollFirst().toString());
+                    stackTmp.add(stack.pollFirst());
+                    manageStack(stackTmp);
                 }
                 break;
             case is_null:
@@ -340,22 +345,36 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
                 write(" !== ( null && undefined && \"\" ) ");
                 break;
             case minus:
-                write(".subtract(" + stack.pollFirst().toString() + "," +
-                        "\'" + stack.pollFirst().toString() + "\')");
+                write(".subtract(");
+                stackTmp.add(stack.pollFirst());
+                manageStack(stackTmp);
+                write(",\'" + stack.pollFirst().toString() + "\')");
                 break;
             case plus:
-                write(".add(" + stack.pollFirst() + "," +
-                        "\'" + stack.pollFirst().toString() + "\')");
+                write(".add(");
+                stackTmp.add(stack.pollFirst());
+                manageStack(stackTmp);
+                write(",\'" + stack.pollFirst().toString() + "\')");
                 break;
             case after:
-                write("moment(" + stack.pollFirst().toString() +
-                        ").isAfter(moment(" + stack.pollFirst().toString() + ")");
-                parenthese_depth++;
+                write("moment(");
+                stackTmp.add(stack.pollFirst());
+                manageStack(stackTmp);
+                write(").isAfter(moment(");
+                stackTmp.add(stack.pollFirst());
+                manageStack(stackTmp);
+                write(")");
+                parentheseDepth++;
                 break;
             case after_or_equals:
-                write("moment(" + stack.pollFirst().toString() +
-                        ").isSameOrAfter(moment(" + stack.pollFirst().toString() + ")");
-                parenthese_depth++;
+                write("moment(");
+                stackTmp.add(stack.pollFirst());
+                manageStack(stackTmp);
+                write(").isSameOrAfter(moment(");
+                stackTmp.add(stack.pollFirst());
+                manageStack(stackTmp);
+                write(")");
+                parentheseDepth++;
                 break;
             case age_at:
                 write("Math.round(Math.abs(moment(");               // using Math.round(...)
@@ -374,35 +393,41 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
             case before:
                 write("moment(" + stack.pollFirst().toString() +
                         ").isBefore(" + stack.pollFirst().toString());
-                parenthese_depth++;
+                parentheseDepth++;
                 break;
             case before_or_equals:
                 write("moment(" + stack.pollFirst().toString() +
                         ").isSameOrBefore(" + stack.pollFirst().toString());
-                parenthese_depth++;
+                parentheseDepth++;
                 break;
             case matches:
                 write(".match(/");
-                parenthese_depth++;
-                use_regexp = 1;
-                is_match = 1;
+                parentheseDepth++;
+                useRegexp = 1;
+                isMatch = 1;
+                break;
+            case match_any:
+//                write();
                 break;
             case contains:
-                write(".contains(\'");
-                write(stack.pollFirst().toString());
-                write("\')");
+                write(".some(function(element){\n" +
+                        "return element.match(\"");
+                stackTmp.add(stack.pollFirst());
+                manageStack(stackTmp);
+                write("\");\n" +
+                        "})");
                 break;
             case starts_with:
                 write(".match(/^");
-                start_with_count++;
-                parenthese_depth++;
-                use_regexp = 1;
+                startWithCount++;
+                parentheseDepth++;
+                useRegexp = 1;
                 break;
             case ends_with:
                 write(".match(/.*");
-                end_with_count++;
-                parenthese_depth++;
-                use_regexp = 1;
+                endWithCount++;
+                parentheseDepth++;
+                useRegexp = 1;
                 break;
             case greater_than:
                 write(" > ");
@@ -544,9 +569,9 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
 
     @Override
     public void endWhen(WhenMetadata metadata, int depth) {
-        while (parenthese_depth > 0) {
+        while (parentheseDepth > 0) {
             write(")");                 //closing parenthesis
-            parenthese_depth--;
+            parentheseDepth--;
         }
         write("){ true;}else{ false;}\n");
     }

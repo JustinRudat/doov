@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class IterableConditionJavascriptTest {
     private ValidationRule rule;
-    private GenericModel model = new GenericModel();
+    private static GenericModel model = new GenericModel();
     private IterableFieldInfo<String, Iterable<String>> A = model.iterableField(asList("a", "aa"), "A"),
             B = model.iterableField(null, "B");
     private String request, result = "";
@@ -43,8 +43,7 @@ public class IterableConditionJavascriptTest {
     @BeforeEach
     void beforeEach() throws ScriptException {
         ops.reset();
-        String varJS = fieldModelToJS(model);
-        engine.eval(varJS);
+        engine.eval(fieldModelToJS(model));
     }
 
     @Test

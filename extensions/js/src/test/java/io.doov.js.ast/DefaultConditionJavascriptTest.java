@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class DefaultConditionJavascriptTest {
     private ValidationRule rule;
-    private GenericModel model = new GenericModel();
+    private static GenericModel model = new GenericModel();
     private StringFieldInfo A = model.stringField("value", "A"),
             B = model.stringField(null, "B"),
             C = model.stringField("value", "C"),
@@ -45,8 +45,7 @@ public class DefaultConditionJavascriptTest {
     @BeforeEach
     void beforeEach() throws ScriptException {
         ops.reset();
-        String varJS = fieldModelToJS(model);
-        engine.eval(varJS);
+        engine.eval(fieldModelToJS(model));
     }
 
     @Test

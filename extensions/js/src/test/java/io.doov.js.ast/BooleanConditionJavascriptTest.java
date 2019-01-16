@@ -6,6 +6,7 @@ import io.doov.core.dsl.meta.i18n.ResourceBundleProvider;
 import io.doov.core.dsl.runtime.GenericModel;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.script.ScriptEngine;
@@ -16,11 +17,12 @@ import java.util.Locale;
 
 import static io.doov.core.dsl.DOOV.when;
 import static io.doov.core.dsl.meta.i18n.ResourceBundleProvider.BUNDLE;
+import static io.doov.js.ast.ScriptEngineFactory.fieldModelToJS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class BooleanConditionJavascriptTest {
     private ValidationRule rule;
-    private GenericModel model = new GenericModel();
+    private static GenericModel model = new GenericModel();
     private BooleanFieldInfo A = model.booleanField(true, "A"),
             B = model.booleanField(false, "B"),
             C = model.booleanField(false, "C");
@@ -36,6 +38,12 @@ public class BooleanConditionJavascriptTest {
         bundle = BUNDLE;
         engine = ScriptEngineFactory.create();
         visitor = new AstJavascriptVisitor(ops, bundle, Locale.ENGLISH);
+    }
+
+    @BeforeEach
+    void beforeEach() throws ScriptException {
+        ops.reset();
+        engine.eval(fieldModelToJS(model));
     }
 
     @Test

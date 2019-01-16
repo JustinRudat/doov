@@ -8,6 +8,7 @@ import io.doov.core.dsl.meta.i18n.ResourceBundleProvider;
 import io.doov.core.dsl.runtime.GenericModel;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.script.ScriptEngine;
@@ -20,14 +21,14 @@ import java.util.Locale;
 import static io.doov.core.dsl.DOOV.when;
 import static io.doov.core.dsl.meta.i18n.ResourceBundleProvider.BUNDLE;
 import static io.doov.core.dsl.time.LocalDateSuppliers.today;
+import static io.doov.js.ast.ScriptEngineFactory.fieldModelToJS;
 import static java.time.temporal.ChronoUnit.MONTHS;
 import static java.time.temporal.ChronoUnit.YEARS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ComplexConditionJavascriptTest {
-    private static Locale LOCALE = Locale.US;
     private ValidationRule rule;
-    private GenericModel model = new GenericModel();
+    private static GenericModel model = new GenericModel();
     private StringFieldInfo A = model.stringField("value", "A"),
             B = model.stringField(null, "B"),
             C = model.stringField("value", "C"),
@@ -49,6 +50,12 @@ public class ComplexConditionJavascriptTest {
         visitor = new AstJavascriptVisitor(ops, bundle, Locale.ENGLISH);
     }
 
+    @BeforeEach
+    void beforeEach() throws ScriptException {
+        ops.reset();
+        engine.eval(fieldModelToJS(model));
+    }
+
     @Test
     void reduce_times_chaining() {
         rule = when(configMaxEmailSize.times(2).times(2).times(2)
@@ -58,7 +65,7 @@ public class ComplexConditionJavascriptTest {
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         try {
             result = engine.eval(request).toString();
-            assertEquals("false", result);
+            assertEquals("true", result);
         } catch (ScriptException e) {
             e.printStackTrace();
         }
@@ -75,7 +82,7 @@ public class ComplexConditionJavascriptTest {
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         try {
             result = engine.eval(request).toString();
-            assertEquals("false", result);
+            assertEquals("true", result);
         } catch (ScriptException e) {
             e.printStackTrace();
         }
@@ -90,7 +97,7 @@ public class ComplexConditionJavascriptTest {
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         try {
             result = engine.eval(request).toString();
-            assertEquals("false", result);
+            assertEquals("true", result);
         } catch (ScriptException e) {
             e.printStackTrace();
         }
@@ -104,7 +111,7 @@ public class ComplexConditionJavascriptTest {
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         try {
             result = engine.eval(request).toString();
-            assertEquals("false", result);
+            assertEquals("true", result);
         } catch (ScriptException e) {
             e.printStackTrace();
         }
