@@ -6,6 +6,7 @@ import io.doov.core.dsl.meta.i18n.ResourceBundleProvider;
 import io.doov.core.dsl.runtime.GenericModel;
 import io.doov.js.ast.AstJavascriptVisitor;
 import io.doov.js.ast.ScriptEngineFactory;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +24,7 @@ import static io.doov.js.ast.ScriptEngineFactory.fieldModelToJS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class NumericConditionJavascriptTest {
+
     private static Locale LOCALE = Locale.US;
     private ValidationRule rule;
     private static GenericModel model = new GenericModel();
@@ -49,109 +51,76 @@ public class NumericConditionJavascriptTest {
     }
 
     @Test
-    void eval_lesserThan_value() {
+    void eval_lesserThan_value() throws ScriptException {
         rule = when(A.lesserThan(0)).validate();
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
-        try {
-            result = engine.eval(request).toString();
-            assertEquals("false", result);
-        } catch (ScriptException e) {
-            e.printStackTrace();
-        }
+        result = engine.eval(request).toString();
+        assertEquals("false", result);
     }
 
     @Test
-    void eval_lesserThan_field() {
+    void eval_lesserThan_field() throws ScriptException {
         rule = when(B.lesserThan(A)).validate();
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
-        try {
-            result = engine.eval(request).toString();
-            assertEquals("false", result);
-        } catch (ScriptException e) {
-            e.printStackTrace();
-        }
+        result = engine.eval(request).toString();
+        assertEquals("false", result);
     }
 
     @Test
-    void eval_lesserOrEquals_value() {
+    void eval_lesserOrEquals_value() throws ScriptException {
         rule = when(A.lesserOrEquals(0)).validate();
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
-        try {
-            result = engine.eval(request).toString();
-            assertEquals("false", result);
-        } catch (ScriptException e) {
-            e.printStackTrace();
-        }
+        result = engine.eval(request).toString();
+        assertEquals("false", result);
     }
 
     @Test
-    void eval_lesserOrEquals_field() {
+    void eval_lesserOrEquals_field() throws ScriptException {
         rule = when(B.lesserOrEquals(A)).validate();
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
-        try {
-            result = engine.eval(request).toString();
-            assertEquals("false", result);
-        } catch (ScriptException e) {
-            e.printStackTrace();
-        }
+        result = engine.eval(request).toString();
+        assertEquals("false", result);
     }
 
     @Test
-    void eval_greaterThan_value() {
+    void eval_greaterThan_value() throws ScriptException {
         rule = when(A.greaterThan(2)).validate();
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
-        try {
-            result = engine.eval(request).toString();
-            assertEquals("false", result);
-        } catch (ScriptException e) {
-            e.printStackTrace();
-        }
+        result = engine.eval(request).toString();
+        assertEquals("false", result);
     }
 
     @Test
-    void eval_greaterThan_field() {
+    void eval_greaterThan_field() throws ScriptException {
         rule = when(A.greaterThan(B)).validate();
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
-        try {
-            result = engine.eval(request).toString();
-            assertEquals("false", result);
-        } catch (ScriptException e) {
-            e.printStackTrace();
-        }
+        result = engine.eval(request).toString();
+        assertEquals("false", result);
     }
 
     @Test
-    void eval_greaterOrEquals_value() {
+    void eval_greaterOrEquals_value() throws ScriptException {
         rule = when(A.greaterOrEquals(2)).validate();
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
-        try {
-            result = engine.eval(request).toString();
-            assertEquals("false", result);
-        } catch (ScriptException e) {
-            e.printStackTrace();
-        }
+        result = engine.eval(request).toString();
+        assertEquals("false", result);
     }
 
     @Test
-    void eval_greaterOrEquals_field() {
+    void eval_greaterOrEquals_field() throws ScriptException {
         rule = when(A.greaterOrEquals(B)).validate();
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
-        try {
-            result = engine.eval(request).toString();
-            assertEquals("false", result);
-        } catch (ScriptException e) {
-            e.printStackTrace();
-        }
+        result = engine.eval(request).toString();
+        assertEquals("false", result);
     }
-
 
     @AfterEach
     void afterEach() {

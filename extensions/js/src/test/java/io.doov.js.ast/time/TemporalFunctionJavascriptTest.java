@@ -1,5 +1,21 @@
 package io.doov.js.ast.time;
 
+import static io.doov.core.dsl.DOOV.when;
+import static io.doov.core.dsl.meta.i18n.ResourceBundleProvider.BUNDLE;
+import static io.doov.core.dsl.time.TemporalAdjuster.firstDayOfYear;
+import static io.doov.js.ast.ScriptEngineFactory.fieldModelToJS;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.Charset;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.Locale;
+import javax.script.ScriptEngine;
+import javax.script.ScriptException;
+
+import org.junit.jupiter.api.*;
+
 import io.doov.core.dsl.field.types.IntegerFieldInfo;
 import io.doov.core.dsl.field.types.LocalDateFieldInfo;
 import io.doov.core.dsl.lang.ValidationRule;
@@ -7,26 +23,9 @@ import io.doov.core.dsl.meta.i18n.ResourceBundleProvider;
 import io.doov.core.dsl.runtime.GenericModel;
 import io.doov.js.ast.AstJavascriptVisitor;
 import io.doov.js.ast.ScriptEngineFactory;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import javax.script.ScriptEngine;
-import javax.script.ScriptException;
-import java.io.ByteArrayOutputStream;
-import java.nio.charset.Charset;
-import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
-import java.util.Locale;
-
-import static io.doov.core.dsl.DOOV.when;
-import static io.doov.core.dsl.meta.i18n.ResourceBundleProvider.BUNDLE;
-import static io.doov.core.dsl.time.TemporalAdjuster.firstDayOfYear;
-import static io.doov.js.ast.ScriptEngineFactory.fieldModelToJS;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TemporalFunctionJavascriptTest {
+
     private ValidationRule rule;
     private static GenericModel model = new GenericModel();
     private LocalDateFieldInfo A = model.localDateField(LocalDate.now(), "A");
@@ -52,68 +51,48 @@ public class TemporalFunctionJavascriptTest {
     }
 
     @Test
-    void eval_with() {
-        rule = when(A.with(firstDayOfYear()).eq(LocalDate.of(1,1,1))).validate();
+    void eval_with() throws ScriptException {
+        rule = when(A.with(firstDayOfYear()).eq(LocalDate.of(1, 1, 1))).validate();
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
-        try {
-            result = engine.eval(request).toString();
-            assertEquals("false", result);
-        } catch (ScriptException e) {
-            e.printStackTrace();
-        }
+        result = engine.eval(request).toString();
+        assertEquals("false", result);
     }
 
     @Test
-    void eval_minus_value() {
-        rule = when(A.minus(1, ChronoUnit.DAYS).eq(LocalDate.of(1,1,1))).validate();
+    void eval_minus_value() throws ScriptException {
+        rule = when(A.minus(1, ChronoUnit.DAYS).eq(LocalDate.of(1, 1, 1))).validate();
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
-        try {
-            result = engine.eval(request).toString();
-            assertEquals("false", result);
-        } catch (ScriptException e) {
-            e.printStackTrace();
-        }
+        result = engine.eval(request).toString();
+        assertEquals("false", result);
     }
 
     @Test
-    void eval_minus_field() {
-        rule = when(A.minus(B,ChronoUnit.DAYS).eq(LocalDate.of(1,1,1))).validate();
+    void eval_minus_field() throws ScriptException {
+        rule = when(A.minus(B, ChronoUnit.DAYS).eq(LocalDate.of(1, 1, 1))).validate();
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
-        try {
-            result = engine.eval(request).toString();
-            assertEquals("false", result);
-        } catch (ScriptException e) {
-            e.printStackTrace();
-        }
+        result = engine.eval(request).toString();
+        assertEquals("false", result);
     }
 
     @Test
-    void eval_plus_value() {
-        rule = when(A.plus(1, ChronoUnit.DAYS).eq(LocalDate.of(1,1,1))).validate();
+    void eval_plus_value() throws ScriptException {
+        rule = when(A.plus(1, ChronoUnit.DAYS).eq(LocalDate.of(1, 1, 1))).validate();
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
-        try {
-            result = engine.eval(request).toString();
-            assertEquals("false", result);
-        } catch (ScriptException e) {
-            e.printStackTrace();
-        }
+        result = engine.eval(request).toString();
+        assertEquals("false", result);
     }
 
     @Test
-    void eval_plus_field() {
-        rule = when(A.plus(B, ChronoUnit.DAYS).eq(LocalDate.of(1,1,1))).validate();
+    void eval_plus_field() throws ScriptException {
+        rule = when(A.plus(B, ChronoUnit.DAYS).eq(LocalDate.of(1, 1, 1))).validate();
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
-        try {
-            result = engine.eval(request).toString();
-            assertEquals("false", result);
-        } catch (ScriptException e) {
-            e.printStackTrace();
-        }
+        result = engine.eval(request).toString();
+        assertEquals("false", result);
     }
 
     @AfterEach

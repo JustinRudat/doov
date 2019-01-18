@@ -1,26 +1,25 @@
 package io.doov.js.ast;
 
-import io.doov.core.dsl.field.types.StringFieldInfo;
-import io.doov.core.dsl.lang.ValidationRule;
-import io.doov.core.dsl.meta.i18n.ResourceBundleProvider;
-import io.doov.core.dsl.runtime.GenericModel;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import javax.script.ScriptEngine;
-import javax.script.ScriptException;
-import java.io.ByteArrayOutputStream;
-import java.nio.charset.Charset;
-import java.util.Locale;
-
 import static io.doov.core.dsl.DOOV.when;
 import static io.doov.core.dsl.meta.i18n.ResourceBundleProvider.BUNDLE;
 import static io.doov.js.ast.ScriptEngineFactory.fieldModelToJS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.Charset;
+import java.util.Locale;
+import javax.script.ScriptEngine;
+import javax.script.ScriptException;
+
+import org.junit.jupiter.api.*;
+
+import io.doov.core.dsl.field.types.StringFieldInfo;
+import io.doov.core.dsl.lang.ValidationRule;
+import io.doov.core.dsl.meta.i18n.ResourceBundleProvider;
+import io.doov.core.dsl.runtime.GenericModel;
+
 public class StringConditionJavascriptTest {
+
     private ValidationRule rule;
     private static GenericModel model = new GenericModel();
     private StringFieldInfo A = model.stringField("value", "A");
@@ -45,55 +44,41 @@ public class StringConditionJavascriptTest {
     }
 
     @Test
-    void eval_contains() {
+    void eval_contains() throws ScriptException {
         rule = when(A.contains("zz")).validate();
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
-        try {
-            result = engine.eval(request).toString();
-            assertEquals("false", result);
-        } catch (ScriptException e) {
-            e.printStackTrace();
-        }
+        result = engine.eval(request).toString();
+        assertEquals("false", result);
     }
 
     @Test
-    void eval_matches() {
+    void eval_matches() throws ScriptException {
         rule = when(A.contains("z+")).validate();
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
-        try {
-            result = engine.eval(request).toString();
-            assertEquals("false", result);
-        } catch (ScriptException e) {
-            e.printStackTrace();
-        }
+        result = engine.eval(request).toString();
+        assertEquals("false", result);
     }
 
     @Test
-    void eval_startsWith() {
-        rule = when(A.contains("zz")).validate();
+    void eval_startsWith() throws ScriptException {
+        rule = when(A.startsWith("zz")).validate();
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
-        try {
-            result = engine.eval(request).toString();
-            assertEquals("false", result);
-        } catch (ScriptException e) {
-            e.printStackTrace();
-        }
+        result = engine.eval(request).toString();
+        assertEquals("false", result);
     }
 
     @Test
-    void eval_endsWith() {
-        rule = when(A.contains("zz")).validate();
+    void eval_endsWith() throws ScriptException {
+        rule = when(A.endsWith("zz")).validate();
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
-        try {
-            result = engine.eval(request).toString();
-            assertEquals("false", result);
-        } catch (ScriptException e) {
-            e.printStackTrace();
-        }
+
+        result = engine.eval(request).toString();
+        assertEquals("false", result);
+
     }
 
     @AfterEach
