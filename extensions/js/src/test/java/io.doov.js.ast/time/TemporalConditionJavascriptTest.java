@@ -1,5 +1,19 @@
 package io.doov.js.ast.time;
 
+import static io.doov.core.dsl.DOOV.when;
+import static io.doov.core.dsl.meta.i18n.ResourceBundleProvider.BUNDLE;
+import static io.doov.js.ast.ScriptEngineFactory.fieldModelToJS;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.Charset;
+import java.time.LocalDate;
+import java.util.Locale;
+import javax.script.ScriptEngine;
+import javax.script.ScriptException;
+
+import org.junit.jupiter.api.*;
+
 import io.doov.core.dsl.field.types.LocalDateFieldInfo;
 import io.doov.core.dsl.lang.ValidationRule;
 import io.doov.core.dsl.meta.i18n.ResourceBundleProvider;
@@ -7,24 +21,9 @@ import io.doov.core.dsl.runtime.GenericModel;
 import io.doov.core.dsl.time.LocalDateSuppliers;
 import io.doov.js.ast.AstJavascriptVisitor;
 import io.doov.js.ast.ScriptEngineFactory;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import javax.script.ScriptEngine;
-import javax.script.ScriptException;
-import java.io.ByteArrayOutputStream;
-import java.nio.charset.Charset;
-import java.time.LocalDate;
-import java.util.Locale;
-
-import static io.doov.core.dsl.DOOV.when;
-import static io.doov.core.dsl.meta.i18n.ResourceBundleProvider.BUNDLE;
-import static io.doov.js.ast.ScriptEngineFactory.fieldModelToJS;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TemporalConditionJavascriptTest {
+
     private ValidationRule rule;
     private static GenericModel model = new GenericModel();
     private LocalDateFieldInfo A = model.localDateField(LocalDate.now(), "A"),
@@ -50,147 +49,103 @@ public class TemporalConditionJavascriptTest {
     }
 
     @Test
-    void eval_eqCondition() {
+    void eval_eqCondition() throws ScriptException {
         rule = when(A.eq(B)).validate();
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
-        try {
-            result = engine.eval(request).toString();
-            assertEquals("false", result);
-        } catch (ScriptException e) {
-            e.printStackTrace();
-        }
+        result = engine.eval(request).toString();
+        assertEquals("false", result);
     }
 
     @Test
-    void eval_before_value() {
-        rule = when(A.before(LocalDate.of(1,1,1))).validate();
+    void eval_before_value() throws ScriptException {
+        rule = when(A.before(LocalDate.of(1, 1, 1))).validate();
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
-        try {
-            result = engine.eval(request).toString();
-            assertEquals("false", result);
-        } catch (ScriptException e) {
-            e.printStackTrace();
-        }
+        result = engine.eval(request).toString();
+        assertEquals("false", result);
     }
 
     @Test
-    void eval_before_field() {
+    void eval_before_field() throws ScriptException {
         rule = when(B.before(A)).validate();
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
-        try {
-            result = engine.eval(request).toString();
-            assertEquals("false", result);
-        } catch (ScriptException e) {
-            e.printStackTrace();
-        }
+        result = engine.eval(request).toString();
+        assertEquals("false", result);
     }
 
     @Test
-    void eval_before_condition() {
+    void eval_before_condition() throws ScriptException {
         rule = when(A.before(LocalDateSuppliers.date(1, 1, 1))).validate();
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
-        try {
-            result = engine.eval(request).toString();
-            assertEquals("false", result);
-        } catch (ScriptException e) {
-            e.printStackTrace();
-        }
+        result = engine.eval(request).toString();
+        assertEquals("false", result);
     }
 
     @Test
-    void eval_beforeOrEq_value() {
-        rule = when(A.beforeOrEq(LocalDate.of(1,1,1))).validate();
+    void eval_beforeOrEq_value() throws ScriptException {
+        rule = when(A.beforeOrEq(LocalDate.of(1, 1, 1))).validate();
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
-        try {
-            result = engine.eval(request).toString();
-            assertEquals("false", result);
-        } catch (ScriptException e) {
-            e.printStackTrace();
-        }
+        result = engine.eval(request).toString();
+        assertEquals("false", result);
     }
 
     @Test
-    void eval_beforeOrEq_condition() {
-        rule = when(A.beforeOrEq(LocalDateSuppliers.date(1,1,1))).validate();
+    void eval_beforeOrEq_condition() throws ScriptException {
+        rule = when(A.beforeOrEq(LocalDateSuppliers.date(1, 1, 1))).validate();
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
-        try {
-            result = engine.eval(request).toString();
-            assertEquals("false", result);
-        } catch (ScriptException e) {
-            e.printStackTrace();
-        }
+        result = engine.eval(request).toString();
+        assertEquals("false", result);
     }
 
     @Test
-    void eval_after_value() {
+    void eval_after_value() throws ScriptException {
         System.out.println(A.toString());
-        rule = when(A.after(LocalDate.of(2100,1,1))).validate();
+        rule = when(A.after(LocalDate.of(2100, 1, 1))).validate();
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
-        try {
-            result = engine.eval(request).toString();
-            assertEquals("false", result);
-        } catch (ScriptException e) {
-            e.printStackTrace();
-        }
+        result = engine.eval(request).toString();
+        assertEquals("false", result);
     }
 
     @Test
-    void eval_after_field() {
+    void eval_after_field() throws ScriptException {
         rule = when(A.after(B)).validate();
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
-        try {
-            result = engine.eval(request).toString();
-            assertEquals("false", result);
-        } catch (ScriptException e) {
-            e.printStackTrace();
-        }
+        result = engine.eval(request).toString();
+        assertEquals("false", result);
     }
 
     @Test
-    void eval_after_condition() {
-        rule = when(A.after(LocalDateSuppliers.date(1,1,1))).validate();
+    void eval_after_condition() throws ScriptException {
+        rule = when(A.after(LocalDateSuppliers.date(1, 1, 1))).validate();
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
-        try {
-            result = engine.eval(request).toString();
-            assertEquals("true", result);
-        } catch (ScriptException e) {
-            e.printStackTrace();
-        }
+        result = engine.eval(request).toString();
+        assertEquals("true", result);
     }
 
     @Test
-    void eval_afterOrEq_value() {
-        rule = when(A.afterOrEq(LocalDate.of(2100,1,1))).validate();
+    void eval_afterOrEq_value() throws ScriptException {
+        rule = when(A.afterOrEq(LocalDate.of(2100, 1, 1))).validate();
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
-        try {
-            result = engine.eval(request).toString();
-            assertEquals("false", result);
-        } catch (ScriptException e) {
-            e.printStackTrace();
-        }
+        result = engine.eval(request).toString();
+        assertEquals("false", result);
     }
 
     @Test
-    void eval_afterOrEq_condition() {
-        rule = when(A.afterOrEq(LocalDateSuppliers.date(2100,1,1))).validate();
+    void eval_afterOrEq_condition() throws ScriptException {
+        rule = when(A.afterOrEq(LocalDateSuppliers.date(2100, 1, 1))).validate();
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
-        try {
-            result = engine.eval(request).toString();
-            assertEquals("false", result);
-        } catch (ScriptException e) {
-            e.printStackTrace();
-        }
+        result = engine.eval(request).toString();
+        assertEquals("false", result);
     }
 
     @AfterEach
