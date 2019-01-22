@@ -3,6 +3,7 @@ package io.doov.js.ast.time;
 import static io.doov.core.dsl.DOOV.when;
 import static io.doov.core.dsl.meta.i18n.ResourceBundleProvider.BUNDLE;
 import static io.doov.core.dsl.time.TemporalAdjuster.firstDayOfYear;
+import static io.doov.js.ast.ScriptEngineFactory.evalMomentJs;
 import static io.doov.js.ast.ScriptEngineFactory.fieldModelToJS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -21,32 +22,32 @@ import io.doov.core.dsl.field.types.LocalDateFieldInfo;
 import io.doov.core.dsl.lang.ValidationRule;
 import io.doov.core.dsl.meta.i18n.ResourceBundleProvider;
 import io.doov.core.dsl.runtime.GenericModel;
-import io.doov.js.ast.AstJavascriptVisitor;
-import io.doov.js.ast.ScriptEngineFactory;
+import io.doov.js.ast.*;
 
 public class TemporalFunctionJavascriptTest {
 
     private ValidationRule rule;
     private static GenericModel model = new GenericModel();
-    private LocalDateFieldInfo A = model.localDateField(LocalDate.now(), "A");
-    private IntegerFieldInfo B = model.intField(1, "B");
+    private static LocalDateFieldInfo A = model.localDateField(LocalDate.now(), "A");
+    private static IntegerFieldInfo B = model.intField(1, "B");
     private String request, result = "";
     private static ByteArrayOutputStream ops;
     private static ResourceBundleProvider bundle;
     private static ScriptEngine engine;
-    private static AstJavascriptVisitor visitor;
+    private static AstJavascriptExpVisitor visitor;
 
     @BeforeAll
     static void init() {
         ops = new ByteArrayOutputStream();
         bundle = BUNDLE;
         engine = ScriptEngineFactory.create();
-        visitor = new AstJavascriptVisitor(ops, bundle, Locale.ENGLISH);
+        visitor = new AstJavascriptExpVisitor(ops, bundle, Locale.ENGLISH);
     }
 
     @BeforeEach
     void beforeEach() throws ScriptException {
         ops.reset();
+        evalMomentJs(engine);
         engine.eval(fieldModelToJS(model));
     }
 

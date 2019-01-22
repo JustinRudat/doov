@@ -5,6 +5,7 @@ package io.doov.js.ast;
 
 import static io.doov.core.dsl.meta.DefaultOperator.*;
 import static io.doov.core.dsl.meta.ElementType.FIELD;
+import static org.apache.commons.lang3.StringUtils.isNumeric;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -18,25 +19,28 @@ import io.doov.core.dsl.meta.ast.AbstractAstVisitor;
 import io.doov.core.dsl.meta.i18n.ResourceProvider;
 import io.doov.core.dsl.meta.predicate.LeafPredicateMetadata;
 
-public class AstJavascriptVisitor extends AbstractAstVisitor {
+public class AstJavascriptExpVisitor extends AbstractAstVisitor {
 
     protected final OutputStream ops;
     protected final ResourceProvider bundle;
     protected final Locale locale;
 
-    private int parentheseDepth = 0;   // define the number of parenthesis to close before ending the rule rewriting
-    private int startWithCount = 0;   // define the number of 'start_with' rule used for closing parenthesis purpose
-    private int endWithCount = 0;     // define the number of 'start_with' rule used for closing parenthesis purpose
-    private int useRegexp = 0;         // boolean as an int to know if we are in a regexp for closing parenthesis
+    private static final ArrayList<DefaultOperator> dateOpeElem = new ArrayList<>();
+    private boolean startWithCount = false;   // define the number of 'start_with' rule used for closing parenthesis
     // purpose
-    private int isMatch = 0;             // boolean as an int to know if we are in a matching rule for closing
-    // parenthesis purpose
+    private boolean endWithCount = false;     // define the number of 'start_with' rule used for closing parenthesis
+    // purpose
+    private boolean useRegexp = false;         // boolean as an int to know if we are in a regexp for closing
+    // parenthesis
+    private boolean isMatch = false;             // boolean as an int to know if we are in a matching rule for closing
+    private boolean testDateOpe = false;
     private boolean isInATemporalFunction = false;
     private ArrayList<Integer> countDateOperators = new ArrayList<>(); // allow to count and separate date operator
     // on their respective arguments
-    private static ArrayList<DefaultOperator> dateOpeElem = new ArrayList<>();
 
-    public AstJavascriptVisitor(OutputStream ops, ResourceProvider bundle, Locale locale) {
+    private int parenthesisDepth = 0;
+
+    public AstJavascriptExpVisitor(OutputStream ops, ResourceProvider bundle, Locale locale) {
         this.ops = ops;
         this.bundle = bundle;
         this.locale = locale;
@@ -67,93 +71,67 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
 
     @Override
     public void startLeaf(LeafPredicateMetadata<?> metadata, int depth) {
-        ArrayDeque<Element> stack = new ArrayDeque<>();    //using arrayDeque to store the fields
+        ArrayDeque<Element> stack = new ArrayDeque<>();
         final int[] chainDateOpe = new int[1];
         chainDateOpe[0] = -1;
-        metadata.elements().forEach(element -> {
-            switch (element.getType()) {
-                case OPERATOR:
-                    if (dateOpeElem.contains(element.getReadable())) {
-                        if (chainDateOpe[0] == -1) {
-                            chainDateOpe[0] = 0;
-                            countDateOperators.add(1);
-                        } else {
-                            countDateOperators.set(countDateOperators.size() - 1,
-                                    countDateOperators.get(countDateOperators.size() - 1) + 1);
-                        }
-                    } else if (chainDateOpe[0] != -1) {
-                        chainDateOpe[0] = -1;
+        metadata.elements().forEach(
+                elt -> {
+                    switch (elt.getType()) {
+                        case OPERATOR:
+                            if(elt.getReadable() == with){
+                                break;
+                            }
+                            if (dateOpeElem.contains(elt.getReadable())) {
+                                if (chainDateOpe[0] == -1) {
+                                    chainDateOpe[0] = 0;
+                                    countDateOperators.add(1);
+                                } else {
+                                    countDateOperators.set(countDateOperators.size() - 1,
+                                            countDateOperators.get(countDateOperators.size() - 1) + 1);
+                                }
+                            } else if (chainDateOpe[0] != -1) {
+                                chainDateOpe[0] = -1;
+                            }
+                            stack.addFirst(elt);
+                            break;
+                        case FIELD:
+                        case VALUE:
+                        case STRING_VALUE:
+                        case PARENTHESIS_LEFT:
+                        case PARENTHESIS_RIGHT:
+                        case TEMPORAL_UNIT:
+                        case UNKNOWN:
+                            stack.add(elt);
+                            break;
                     }
-                    if (element.getReadable() == as_a_number                       // checking for special cases
-                            || element.getReadable() == as_string || dateOpeElem.contains(element.getReadable())) {
-                        stack.addFirst(element);
-                    } else {
-                        if (element.getReadable() == not) {
-                            stack.addFirst(element);
-                        } else {
-                            stack.add(element);
-                        }
-                    }
-                    break;
-                case STRING_VALUE:
-                case FIELD:
-                case VALUE:
-                case TEMPORAL_UNIT:
-                    stack.add(element);
-                    break;
-                case UNKNOWN:
-                    write("/* Unknown " + element.toString() + "*/");
-                    break;
-                case PARENTHESIS_LEFT:
-                case PARENTHESIS_RIGHT:
-                    write("/*" + element.toString() + "*/");
-                    break;
-            }
-        });
+                }
+        );
         manageStack(stack);
-        while (parentheseDepth > 0) {
-            write(")");
-            parentheseDepth--;
-        }
     }
 
-    /**
-     * This function manage the different parameters of the predicate
-     *
-     * @param stack A deque of the predicate parameters
-     */
     private void manageStack(ArrayDeque<Element> stack) {
+        String values;
         while (stack.size() > 0) {
             Element e = stack.pollFirst();
             switch (e.getType()) {
                 case FIELD:
-                    write(e.toString());
+                    if(isInATemporalFunction){
+                        write("moment(");
+                        write(e.toString());
+                        write(")");
+                    }else {
+                        write(e.toString());
+                    }
                     break;
                 case OPERATOR:
                     manageOperator((DefaultOperator) e.getReadable(), stack);
                     break;
                 case VALUE:
+                    values = e.toString();
                     if (isInATemporalFunction && e.getType() != FIELD) {
-                        write("\'" + e.toString() + "\'");
-                    } else if (e.toString().startsWith(" : ")) {
-                        String values = e.toString().replace(" : ", "");
-                        values = values.replace("[", "");
-                        values = values.replace("]", "");
-                        String[] valuesArray = values.split(", ");
-                        values = "[";
-                        if (StringUtils.isNumeric(e.toString())) {
-                            for (int i = 0; i < valuesArray.length - 1; i++) {
-                                values = values + valuesArray[i] + ", ";
-                            }
-                            values = values + valuesArray[valuesArray.length - 1];
-                        } else {
-                            for (int i = 0; i < valuesArray.length - 1; i++) {
-                                values = values + "\'" + valuesArray[i] + "\', ";
-                            }
-                            values = values + "\'" + valuesArray[valuesArray.length - 1] + "\'";
-                        }
-                        values = values + "]";
-                        write(values);
+                        write("\'" + values + "\'");
+                    } else if (values.startsWith(" : ")) {
+                        manageTabValues(e.toString().replace(" : ", ""));
                     } else if (StringUtils.isNumeric(e.toString())) {
                         write(e.toString());
                     } else {
@@ -161,72 +139,120 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
                     }
                     break;
                 case STRING_VALUE:
-                    if (useRegexp == 1) {
+                    values = e.toString();
+                    if (useRegexp) {
                         String tmp = e.toString();
-                        if (isMatch == 1) {
-                            isMatch = 0;
+                        if (isMatch) {
+                            isMatch = false;
                         } else {
                             tmp = formatRegexp(tmp);
                         }
                         write(tmp);
-                        if (startWithCount > 0) {
+                        if (startWithCount) {
                             write(".*");
-                            startWithCount--;
-                        } else if (endWithCount > 0) {
+                        } else if (endWithCount) {
                             write("$");
-                            endWithCount--;
                         }
-                        useRegexp = 0;
+                    } else if (values.startsWith(" : ")) {
+                        manageTabValues(values.replace(" : ", ""));
                     } else {
-                        write("\'" + e.toString() + "\'");
+                        write("\'" + values + "\'");
                     }
                     break;
                 case PARENTHESIS_LEFT:
+                    break;
                 case PARENTHESIS_RIGHT:
+                    break;
+                case TEMPORAL_UNIT:
+                    break;
                 case UNKNOWN:
                     break;
             }
         }
     }
 
-    /**
-     * this method will write the javascript translation for the operator of the predicate
-     *
-     * @param element the default operator of the LeafMetadata
-     * @param stack   the deque of the parameters not translated yet to Javascript predicate
-     */
-    private void manageOperator(DefaultOperator element, ArrayDeque<Element> stack) {
+    public void manageTabValues(String values) {
+        values = values.replace("[", "");
+        values = values.replace("]", "");
+        String[] valuesArray = values.split(", ");
+        values = "[";
+        for (int i = 0; i < valuesArray.length - 1; i++) {
+            if (isNumeric(valuesArray[i])) {
+                values += valuesArray[i] + ", ";
+            } else {
+                values += "\'" + valuesArray[i] + "\', ";
+            }
+        }
+        if (isNumeric(valuesArray[valuesArray.length - 1])) {
+            values += valuesArray[valuesArray.length - 1] + "]";
+        } else {
+            values += "\'" + valuesArray[valuesArray.length - 1] + "\']";
+        }
+        write(values);
+        values = "";
+    }
+
+    private void manageIterableField(ArrayDeque<Element> stack, ArrayDeque<Element> stackTmp) {
+        if (stack.getFirst().getReadable().toString().contains("IterableFieldInfo")) {
+            stackTmp.add(stack.pollFirst());
+            manageStack(stackTmp);
+        } else {
+            write("[");
+            stackTmp.add(stack.pollFirst());
+            manageStack(stackTmp);
+            write("]");
+            useRegexp = true;
+        }
+    }
+
+    private void manageOperator(DefaultOperator operator, ArrayDeque<Element> stack) {
         ArrayDeque<Element> stackTmp = new ArrayDeque<>();
-        switch (element) {
+        switch (operator) {
             case rule:
+                break;
             case validate:
+                break;
             case empty:
-            case as:
-                break;
-            case with:
-                manageStack(stack);
-                break;
-            case as_a_number:
-                if (stack.size() > 0) {
-                    write("parseInt(");
-                    stackTmp.add(stack.pollFirst());
-                    manageStack(stackTmp);
-                    write(")");
-                }
-                break;
-            case as_string:
-                if (stack.size() > 0) {
-                    write("String(");
-                    stackTmp.add(stack.pollFirst());
-                    manageStack(stackTmp);
-                    write(")");
-                }
                 break;
             case and:
+                stackTmp.add(stack.pollFirst());
+                manageStack(stackTmp);
                 write(" && ");
+                stackTmp.add(stack.pollFirst());
+                manageStack(stackTmp);
                 break;
             case or:
+                stackTmp.add(stack.pollFirst());
+                manageStack(stackTmp);
                 write(" || ");
+                stackTmp.add(stack.pollFirst());
+                manageStack(stackTmp);
+                break;
+            case match_any:
+                manageIterableField(stack, stackTmp);
+                write(".some(function(element){\n return ");
+                stackTmp.add(stack.pollFirst());
+                manageStack(stackTmp);
+                write(".indexOf(element) >= 0 ;\n})");
+                useRegexp = false;
+                break;
+            case match_all:
+                manageIterableField(stack, stackTmp);
+                write(".every(function(element){\n" +
+                        "return ");
+                stackTmp.add(stack.pollFirst());
+                manageStack(stackTmp);
+                write(".every(function(elt){ return elt.match(element);});\n})");
+                useRegexp = false;
+                break;
+            case match_none:
+                manageIterableField(stack, stackTmp);
+                write(".every(function(element){\n" +
+                        "return ");
+                stackTmp.add(stack.pollFirst());
+                manageStack(stackTmp);
+                write(".indexOf(element) < 0;})");
+                useRegexp = false;
                 break;
             case count:
                 break;
@@ -236,7 +262,7 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
                 break;
             case not:
                 write("!(");
-                parentheseDepth++;
+                parenthesisDepth++;
                 break;
             case always_true:
                 write("true");
@@ -245,38 +271,72 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
                 write("false");
                 break;
             case times:
+                stackTmp.add(stack.pollFirst());
+                manageStack(stackTmp);
                 write(" * ");
+                stackTmp.add(stack.pollFirst());
+                manageStack(stackTmp);
                 break;
             case when:
                 break;
             case equals:
-                boolean testDateOpe = false;
                 if (dateOpeElem.contains(stack.getFirst().getReadable())) {
-                    write(".isSame(");
+                    stackTmp = stack.clone();
+                    stack.clear();
+                    stack.add(stackTmp.pollLast());
+                    manageStack(stackTmp);
                     testDateOpe = true;
                 } else {
+                    stackTmp.add(stack.pollFirst());
+                    manageStack(stackTmp);
+                }
+                if (testDateOpe) {
+                    write(".isSame(");
+                } else {
                     write(" == ");
+                }
+                if (testDateOpe) {
+                    write("\'");
                 }
                 stackTmp.add(stack.pollFirst());
                 manageStack(stackTmp);
                 if (testDateOpe) {
-                    write(")");
+                    write("\')");
+                    testDateOpe = false;
                 }
                 break;
             case not_equals:
+                stackTmp.add(stack.pollFirst());
+                manageStack(stackTmp);
                 write(" != ");
-                if (stack != null) {
-                    stackTmp.add(stack.pollFirst());
-                    manageStack(stackTmp);
-                }
+                stackTmp.add(stack.pollFirst());
+                manageStack(stackTmp);
                 break;
             case is_null:
-                write(" === ( null || undefined || \"\" )");
+                write("( null || undefined || \"\" ) == ");
                 break;
             case is_not_null:
-                write(" !== ( null && undefined && \"\" )");
+                write("( null && undefined && \"\" ) != ");
+                break;
+            case as_a_number:
+                write("parseInt(");
+                stackTmp.add(stack.pollFirst());
+                manageStack(stackTmp);
+                write(")");
+                break;
+            case as_string:
+                write("String(");
+                stackTmp.add(stack.pollFirst());
+                manageStack(stackTmp);
+                write(")");
+                break;
+            case as:
+                break;
+            case with:
+                manageStack(stack);
                 break;
             case minus:
+                isInATemporalFunction = true;
                 write("moment(");
                 stackTmp.add(stack.pollFirst());
                 manageStack(stackTmp);
@@ -284,26 +344,29 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
                 stackTmp.add(stack.pollFirst());
                 manageStack(stackTmp);
                 write(",\'" + stack.pollFirst().toString() + "\')");
+                testDateOpe = true;
+                isInATemporalFunction = false;
                 break;
             case plus:
-                write("moment(");
+                isInATemporalFunction = true;
                 stackTmp.add(stack.pollFirst());
                 manageStack(stackTmp);
-                write(").add(");
+                write(".add(");
                 stackTmp.add(stack.pollFirst());
                 manageStack(stackTmp);
                 write(",\'" + stack.pollFirst().toString() + "\')");
+                testDateOpe = true;
+                isInATemporalFunction = false;
                 break;
             case after:
                 isInATemporalFunction = true;
-                write("moment(");
                 stackTmp.add(stack.pollFirst());
                 manageStack(stackTmp);
-                write(").isAfter(moment(");
+                write(".isAfter(moment(");
                 stackTmp.add(stack.pollFirst());
                 manageStack(stackTmp);
                 write(")");
-                parentheseDepth++;
+                parenthesisDepth++;
                 isInATemporalFunction = false;
                 break;
             case after_or_equals:
@@ -314,7 +377,7 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
                 write(").isSameOrAfter(");
                 stackTmp.add(stack.pollFirst());
                 manageStack(stackTmp);
-                parentheseDepth++;
+                parenthesisDepth++;
                 isInATemporalFunction = false;
                 break;
             case age_at:
@@ -337,117 +400,125 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
                 isInATemporalFunction = true;
                 write("moment(" + stack.pollFirst().toString() +
                         ").isBefore(" + stack.pollFirst().toString());
-                parentheseDepth++;
+                parenthesisDepth++;
                 isInATemporalFunction = false;
                 break;
             case before_or_equals:
                 isInATemporalFunction = true;
                 write("moment(" + stack.pollFirst().toString() +
                         ").isSameOrBefore(\'" + stack.pollFirst().toString() + "\'");
-                parentheseDepth++;
+                parenthesisDepth++;
                 isInATemporalFunction = false;
                 break;
             case matches:
+                stackTmp.add(stack.pollFirst());
+                manageStack(stackTmp);
                 write(".match(/");
-                parentheseDepth++;
-                useRegexp = 1;
-                isMatch = 1;
-                break;
-            case match_any:
-                write(".some(function(element){\n" +
-                        "return ");
+                useRegexp = true;
+                isMatch = true;
                 stackTmp.add(stack.pollFirst());
                 manageStack(stackTmp);
-                write(".indexOf(element) >= 0 ;\n" +
-                        "})");
-                break;
-            case match_all:
-                write(".every(function(element){\n" +
-                        "return ");
-                stackTmp.add(stack.pollFirst());
-                manageStack(stackTmp);
-                write(".every(function(elt){ return elt.match(element);});\n})");
-                break;
-            case match_none:
-                write(".every(function(element){\n" +
-                        "return ");
-                stackTmp.add(stack.pollFirst());
-                manageStack(stackTmp);
-                write(".indexOf(element) < 0 ;\n" +
-                        "})");
+                write("/)");
                 break;
             case contains:
+                manageIterableField(stack, stackTmp);
                 write(".some(function(element){\n" +
                         "return element.match(");
+                if (useRegexp) {
+                    write("/.*");
+                }
                 stackTmp.add(stack.pollFirst());
                 manageStack(stackTmp);
-                write(");\n" +
-                        "})");
+                if (useRegexp) {
+                    write(".*/");
+                }
+                write(");})");
+                useRegexp = false;
                 break;
             case starts_with:
+                manageIterableField(stack, stackTmp);
                 write(".some(function(element){\n" +
                         "return element.match(/^");
-                startWithCount++;
-                parentheseDepth++;
-                useRegexp = 1;
+                startWithCount = true;
+                parenthesisDepth++;
                 stackTmp.add(stack.pollFirst());
                 manageStack(stackTmp);
                 write("/)}");
+                useRegexp = false;
+                startWithCount = false;
                 break;
             case ends_with:
+                manageIterableField(stack, stackTmp);
                 write(".some(function(element){\n" +
                         "return element.match(/.*");
-                endWithCount++;
-                parentheseDepth++;
-                useRegexp = 1;
+                endWithCount = true;
+                parenthesisDepth++;
                 stackTmp.add(stack.pollFirst());
                 manageStack(stackTmp);
                 write("/)}");
-
+                useRegexp = false;
+                endWithCount = false;
                 break;
             case greater_than:
+                stackTmp.add(stack.pollFirst());
+                manageStack(stackTmp);
                 write(" > ");
-                if (stack != null && stack.size() > 0) {
-                    write(stack.pollFirst().toString());
-                }
+                stackTmp.add(stack.pollFirst());
+                manageStack(stackTmp);
                 break;
             case greater_or_equals:
+                stackTmp.add(stack.pollFirst());
+                manageStack(stackTmp);
                 write(" >= ");
-                if (stack != null && stack.size() > 0) {
-                    write(stack.pollFirst().toString());
-                }
+                stackTmp.add(stack.pollFirst());
+                manageStack(stackTmp);
                 break;
             case xor:
                 break;
             case is:
+                stackTmp.add(stack.pollFirst());
+                manageStack(stackTmp);
                 write(" === ");
-
+                stackTmp.add(stack.pollFirst());
+                manageStack(stackTmp);
                 break;
             case lesser_than:
+                stackTmp.add(stack.pollFirst());
+                manageStack(stackTmp);
                 write(" < ");
-                if (stack != null && stack.size() > 0) {
-                    write(stack.pollFirst().toString());
-                }
+                stackTmp.add(stack.pollFirst());
+                manageStack(stackTmp);
                 break;
             case lesser_or_equals:
+                stackTmp.add(stack.pollFirst());
+                manageStack(stackTmp);
                 write(" <= ");
-                if (stack != null && stack.size() > 0) {
-                    write(stack.pollFirst().toString());
-                }
+                stackTmp.add(stack.pollFirst());
+                manageStack(stackTmp);
                 break;
             case has_not_size:
+                stackTmp.add(stack.pollFirst());
+                manageStack(stackTmp);
                 write(".length != ");
                 break;
             case has_size:
+                stackTmp.add(stack.pollFirst());
+                manageStack(stackTmp);
                 write(".length == ");
                 break;
             case is_empty:
+                stackTmp.add(stack.pollFirst());
+                manageStack(stackTmp);
                 write(".length == 0");
                 break;
             case is_not_empty:
+                stackTmp.add(stack.pollFirst());
+                manageStack(stackTmp);
                 write(".length != 0");
                 break;
             case length_is:
+                stackTmp.add(stack.pollFirst());
+                manageStack(stackTmp);
                 write(".length");
                 break;
             case today:
@@ -520,7 +591,30 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
                 write(").endOf('year')");
                 break;
         }
+    }
 
+    @Override
+    public void startWhen(WhenMetadata metadata, int depth) {
+        write("if(");
+    }
+
+    @Override
+    public void endWhen(WhenMetadata metadata, int depth) {
+        while (parenthesisDepth > 0) {
+            write(")");
+            parenthesisDepth--;
+        }
+        write("){ true; }else{ false; }\n");
+    }
+
+    /**
+     * XOR operator construction and writing
+     *
+     * @param leftMD  left Metadata of the XOR predicate
+     * @param rightMD right Metadata of the XOR predicate
+     */
+    private void manageXOR(Metadata leftMD, Metadata rightMD) {
+        write("(!" + leftMD + " && " + rightMD + ") || (" + leftMD + " && !" + rightMD + ")");
     }
 
     /**
@@ -558,28 +652,12 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
         }
     }
 
-    /**
-     * XOR operator construction and writing
-     *
-     * @param leftMD  left Metadata of the XOR predicate
-     * @param rightMD right Metadata of the XOR predicate
-     */
-    private void manageXOR(Metadata leftMD, Metadata rightMD) {
-        write("(!" + leftMD + " && " + rightMD + ") || (" + leftMD + " && !" + rightMD + ")");
-    }
-
-    @Override
-    public void startWhen(WhenMetadata metadata, int depth) {
-        write("if(");
-    }
-
-    @Override
-    public void endWhen(WhenMetadata metadata, int depth) {
-        while (parentheseDepth > 0) {
-            write(")");                 //closing parenthesis
-            parentheseDepth--;
+    protected void write(String str) {
+        try {
+            ops.write(str.getBytes(StandardCharsets.UTF_8));
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
         }
-        write("){ true;}else{ false;}\n");
     }
 
     /**
@@ -607,11 +685,4 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
         return reg;
     }
 
-    protected void write(String str) {
-        try {
-            ops.write(str.getBytes(StandardCharsets.UTF_8));
-        } catch (IOException ioe) {
-            throw new RuntimeException(ioe);
-        }
-    }
 }

@@ -23,20 +23,20 @@ public class IterableConditionJavascriptTest {
 
     private ValidationRule rule;
     private static GenericModel model = new GenericModel();
-    private IterableFieldInfo<String, Iterable<String>> A = model.iterableField(asList("a", "aa"), "A"),
+    private static IterableFieldInfo<String, Iterable<String>> A = model.iterableField(asList("a", "aa"), "A"),
             B = model.iterableField(null, "B");
     private String request, result = "";
     private static ByteArrayOutputStream ops;
     private static ResourceBundleProvider bundle;
     private static ScriptEngine engine;
-    private static AstJavascriptVisitor visitor;
+    private static AstJavascriptExpVisitor visitor;
 
     @BeforeAll
     static void init() {
         ops = new ByteArrayOutputStream();
         bundle = BUNDLE;
         engine = ScriptEngineFactory.create();
-        visitor = new AstJavascriptVisitor(ops, bundle, Locale.ENGLISH);
+        visitor = new AstJavascriptExpVisitor(ops, bundle, Locale.ENGLISH);
     }
 
     @BeforeEach
@@ -73,8 +73,17 @@ public class IterableConditionJavascriptTest {
     }
 
     @Test
-    void eval_noneMatch_collection() throws ScriptException {
-        rule = when(B.isNotEmpty()).validate();
+    void eval_noneMatch_collection_true() throws ScriptException {
+        rule = when(A.noneMatch(asList("zzz","jjj"))).validate();
+        visitor.browse(rule.metadata(), 0);
+        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
+        result = engine.eval(request).toString();
+        assertEquals("true", result);
+    }
+
+    @Test
+    void eval_noneMatch_collection_false() throws ScriptException {
+        rule = when(A.noneMatch(asList("aa","jjj"))).validate();
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();

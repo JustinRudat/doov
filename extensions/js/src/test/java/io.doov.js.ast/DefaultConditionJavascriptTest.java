@@ -23,7 +23,7 @@ public class DefaultConditionJavascriptTest {
 
     private ValidationRule rule;
     private static GenericModel model = new GenericModel();
-    private StringFieldInfo A = model.stringField("value", "A"),
+    private static StringFieldInfo A = model.stringField("value", "A"),
             B = model.stringField(null, "B"),
             C = model.stringField("value", "C"),
             D = model.stringField("", "D");
@@ -31,14 +31,14 @@ public class DefaultConditionJavascriptTest {
     private static ByteArrayOutputStream ops;
     private static ResourceBundleProvider bundle;
     private static ScriptEngine engine;
-    private static AstJavascriptVisitor visitor;
+    private static AstJavascriptExpVisitor visitor;
 
     @BeforeAll
     static void init() {
         ops = new ByteArrayOutputStream();
         bundle = BUNDLE;
         engine = ScriptEngineFactory.create();
-        visitor = new AstJavascriptVisitor(ops, bundle, Locale.ENGLISH);
+        visitor = new AstJavascriptExpVisitor(ops, bundle, Locale.ENGLISH);
     }
 
     @BeforeEach
@@ -111,7 +111,7 @@ public class DefaultConditionJavascriptTest {
     }
 
     @Test
-    void eval_anyMatch_values() throws ScriptException {
+    void eval_anyMatch_values_false() throws ScriptException {
         rule = when(A.anyMatch("a", "b", "c")).validate();
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
@@ -120,8 +120,17 @@ public class DefaultConditionJavascriptTest {
     }
 
     @Test
-    void eval_allMatch_values() throws ScriptException {
+    void eval_anyMatch_values_true() throws ScriptException {
         rule = when(A.anyMatch("value", "b", "c")).validate();
+        visitor.browse(rule.metadata(), 0);
+        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
+        result = engine.eval(request).toString();
+        assertEquals("true", result);
+    }
+
+    @Test
+    void eval_allMatch_values_false() throws ScriptException {
+        rule = when(A.allMatch("value", "b", "c")).validate();
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
@@ -129,12 +138,30 @@ public class DefaultConditionJavascriptTest {
     }
 
     @Test
-    void eval_allMatch_collection() throws ScriptException {
-        rule = when(A.anyMatch(asList("value", "b", "c"))).validate();
+    void eval_allMatch_values_true() throws ScriptException {
+        rule = when(A.allMatch("value", "value", "value")).validate();
+        visitor.browse(rule.metadata(), 0);
+        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
+        result = engine.eval(request).toString();
+        assertEquals("true", result);
+    }
+
+    @Test
+    void eval_allMatch_collection_false() throws ScriptException {
+        rule = when(A.allMatch(asList("value", "b", "c"))).validate();
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
+    }
+
+    @Test
+    void eval_allMatch_collection_true() throws ScriptException {
+        rule = when(A.allMatch(asList("value", "value", "value"))).validate();
+        visitor.browse(rule.metadata(), 0);
+        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
+        result = engine.eval(request).toString();
+        assertEquals("true", result);
     }
 
     @Test

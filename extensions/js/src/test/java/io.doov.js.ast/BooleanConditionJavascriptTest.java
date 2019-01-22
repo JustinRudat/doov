@@ -22,21 +22,21 @@ public class BooleanConditionJavascriptTest {
 
     private ValidationRule rule;
     private static GenericModel model = new GenericModel();
-    private BooleanFieldInfo A = model.booleanField(true, "A"),
+    private static BooleanFieldInfo A = model.booleanField(true, "A"),
             B = model.booleanField(false, "B"),
             C = model.booleanField(false, "C");
     private String request, result = "";
     private static ByteArrayOutputStream ops;
     private static ResourceBundleProvider bundle;
     private static ScriptEngine engine;
-    private static AstJavascriptVisitor visitor;
+    private static AstJavascriptExpVisitor visitor;
 
     @BeforeAll
     static void init() {
         ops = new ByteArrayOutputStream();
         bundle = BUNDLE;
         engine = ScriptEngineFactory.create();
-        visitor = new AstJavascriptVisitor(ops, bundle, Locale.ENGLISH);
+        visitor = new AstJavascriptExpVisitor(ops, bundle, Locale.ENGLISH);
     }
 
     @BeforeEach
