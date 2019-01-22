@@ -22,19 +22,19 @@ public class StringConditionJavascriptTest {
 
     private ValidationRule rule;
     private static GenericModel model = new GenericModel();
-    private StringFieldInfo A = model.stringField("value", "A");
+    private static StringFieldInfo A = model.stringField("value", "A");
     private String request, result = "";
     private static ByteArrayOutputStream ops;
     private static ResourceBundleProvider bundle;
     private static ScriptEngine engine;
-    private static AstJavascriptVisitor visitor;
+    private static AstJavascriptExpVisitor visitor;
 
     @BeforeAll
     static void init() {
         ops = new ByteArrayOutputStream();
         bundle = BUNDLE;
         engine = ScriptEngineFactory.create();
-        visitor = new AstJavascriptVisitor(ops, bundle, Locale.ENGLISH);
+        visitor = new AstJavascriptExpVisitor(ops, bundle, Locale.ENGLISH);
     }
 
     @BeforeEach
@@ -54,7 +54,7 @@ public class StringConditionJavascriptTest {
 
     @Test
     void eval_matches() throws ScriptException {
-        rule = when(A.contains("z+")).validate();
+        rule = when(A.matches("z+")).validate();
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
@@ -62,7 +62,7 @@ public class StringConditionJavascriptTest {
     }
 
     @Test
-    void eval_startsWith() throws ScriptException {
+    void eval_startsWith_false() throws ScriptException {
         rule = when(A.startsWith("zz")).validate();
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
@@ -71,13 +71,33 @@ public class StringConditionJavascriptTest {
     }
 
     @Test
-    void eval_endsWith() throws ScriptException {
+    void eval_endsWith_false() throws ScriptException {
         rule = when(A.endsWith("zz")).validate();
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
 
         result = engine.eval(request).toString();
         assertEquals("false", result);
+
+    }
+
+    @Test
+    void eval_startsWith_true() throws ScriptException {
+        rule = when(A.startsWith("val")).validate();
+        visitor.browse(rule.metadata(), 0);
+        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
+        result = engine.eval(request).toString();
+        assertEquals("true", result);
+    }
+
+    @Test
+    void eval_endsWith_true() throws ScriptException {
+        rule = when(A.endsWith("ue")).validate();
+        visitor.browse(rule.metadata(), 0);
+        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
+
+        result = engine.eval(request).toString();
+        assertEquals("true", result);
 
     }
 

@@ -4,8 +4,7 @@ import io.doov.core.dsl.field.types.IntegerFieldInfo;
 import io.doov.core.dsl.lang.ValidationRule;
 import io.doov.core.dsl.meta.i18n.ResourceBundleProvider;
 import io.doov.core.dsl.runtime.GenericModel;
-import io.doov.js.ast.AstJavascriptVisitor;
-import io.doov.js.ast.ScriptEngineFactory;
+import io.doov.js.ast.*;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -25,23 +24,22 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class NumericConditionJavascriptTest {
 
-    private static Locale LOCALE = Locale.US;
     private ValidationRule rule;
     private static GenericModel model = new GenericModel();
-    private IntegerFieldInfo A = model.intField(1, "A"),
+    private static IntegerFieldInfo A = model.intField(1, "A"),
             B = model.intField(2, "B");
     private String request, result = "";
     private static ByteArrayOutputStream ops;
     private static ResourceBundleProvider bundle;
     private static ScriptEngine engine;
-    private static AstJavascriptVisitor visitor;
+    private static AstJavascriptExpVisitor visitor;
 
     @BeforeAll
     static void init() {
         ops = new ByteArrayOutputStream();
         bundle = BUNDLE;
         engine = ScriptEngineFactory.create();
-        visitor = new AstJavascriptVisitor(ops, bundle, Locale.ENGLISH);
+        visitor = new AstJavascriptExpVisitor(ops, bundle, Locale.ENGLISH);
     }
 
     @BeforeEach
