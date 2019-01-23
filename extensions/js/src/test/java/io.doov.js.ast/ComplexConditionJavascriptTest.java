@@ -56,8 +56,7 @@ public class ComplexConditionJavascriptTest {
 
     @Test
     void reduce_times_chaining() throws ScriptException {
-        rule = when(configMaxEmailSize.times(2).times(2).times(2)
-                .eq(24)).validate().withShortCircuit(false);
+        rule = when(configMaxEmailSize.times(2).eq(6)).validate().withShortCircuit(false);
 
         visitor.browse(rule.metadata(), 0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));

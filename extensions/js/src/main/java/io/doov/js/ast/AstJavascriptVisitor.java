@@ -3,20 +3,26 @@
  */
 package io.doov.js.ast;
 
-import static io.doov.core.dsl.meta.DefaultOperator.*;
-import static io.doov.core.dsl.meta.ElementType.FIELD;
+import io.doov.core.dsl.meta.DefaultOperator;
+import io.doov.core.dsl.meta.Element;
+import io.doov.core.dsl.meta.Metadata;
+import io.doov.core.dsl.meta.WhenMetadata;
+import io.doov.core.dsl.meta.ast.AbstractAstVisitor;
+import io.doov.core.dsl.meta.i18n.ResourceProvider;
+import io.doov.core.dsl.meta.predicate.BinaryPredicateMetadata;
+import io.doov.core.dsl.meta.predicate.LeafPredicateMetadata;
+import io.doov.core.dsl.meta.predicate.NaryPredicateMetadata;
+import io.doov.core.dsl.meta.predicate.UnaryPredicateMetadata;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Locale;
 
-import org.apache.commons.lang3.StringUtils;
-
-import io.doov.core.dsl.meta.*;
-import io.doov.core.dsl.meta.ast.AbstractAstVisitor;
-import io.doov.core.dsl.meta.i18n.ResourceProvider;
-import io.doov.core.dsl.meta.predicate.LeafPredicateMetadata;
+import static io.doov.core.dsl.meta.DefaultOperator.*;
 
 public class AstJavascriptVisitor extends AbstractAstVisitor {
 
@@ -27,14 +33,10 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
     private int parentheseDepth = 0;   // define the number of parenthesis to close before ending the rule rewriting
     private int startWithCount = 0;   // define the number of 'start_with' rule used for closing parenthesis purpose
     private int endWithCount = 0;     // define the number of 'start_with' rule used for closing parenthesis purpose
-    private int useRegexp = 0;         // boolean as an int to know if we are in a regexp for closing parenthesis
-    // purpose
-    private int isMatch = 0;             // boolean as an int to know if we are in a matching rule for closing
-    // parenthesis purpose
-    private boolean isInATemporalFunction = false;
-    private ArrayList<Integer> countDateOperators = new ArrayList<>(); // allow to count and separate date operator
-    // on their respective arguments
-    private static ArrayList<DefaultOperator> dateOpeElem = new ArrayList<>();
+    private int useRegexp = 0;         // boolean as an int to know if we are in a regexp for closing parenthesis purpose
+    private int isMatch = 0;             // boolean as an int to know if we are in a matching rule for closing parenthesis purpose
+    private ArrayList<Integer> countDateOperators = new ArrayList<>(); // allow to count and separate date operator on their respective arguments
+    private ArrayList<DefaultOperator> dateOpeElem = new ArrayList<>();
 
     public AstJavascriptVisitor(OutputStream ops, ResourceProvider bundle, Locale locale) {
         this.ops = ops;
@@ -47,10 +49,6 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
         dateOpeElem.add(plus);
         dateOpeElem.add(minus);
         dateOpeElem.add(today);
-        dateOpeElem.add(after);
-        dateOpeElem.add(before);
-        dateOpeElem.add(after_or_equals);
-        dateOpeElem.add(before_or_equals);
         dateOpeElem.add(today_minus);
         dateOpeElem.add(today_minus);
         dateOpeElem.add(first_day_of_month);
@@ -63,6 +61,98 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
         dateOpeElem.add(last_day_of_year);
         dateOpeElem.add(last_day_of_this_month);
         dateOpeElem.add(last_day_of_this_year);
+    }
+
+    @Override
+    public void startBinary(BinaryPredicateMetadata metadata, int depth) {
+        write("(");
+    }
+
+    @Override
+    public void afterChildBinary(BinaryPredicateMetadata metadata, Metadata child, boolean hasNext, int depth) {
+        if (hasNext) {
+            switch ((DefaultOperator) metadata.getOperator()) {
+                case and:
+                    write(" && ");
+                    break;
+                case or:
+                    write(" || ");
+                    break;
+                case xor:
+                    manageXOR(metadata.getLeft(), metadata.getRight());
+                    break;
+                case greater_than:
+                    write(" > ");
+                    break;
+                case greater_or_equals:
+                    write(" >= ");
+                    break;
+                case lesser_than:
+                    write(" < ");
+                    break;
+                case lesser_or_equals:
+                    write(" <= ");
+                case equals:
+                    write(" == ");
+                    break;
+                case not_equals:
+                    write(" != ");
+                    break;
+            }
+        }
+    }
+
+    @Override
+    public void endBinary(BinaryPredicateMetadata metadata, int depth) {
+        write(")");
+    }
+
+    @Override
+    public void startNary(NaryPredicateMetadata metadata, int depth) {
+        if (metadata.getOperator() == match_none) {
+            write("!");                             // for predicate [a,b,c] will translate as (!a && !b && !c)
+        }
+        if (metadata.getOperator() == count || metadata.getOperator() == sum) {
+            write("[");                             // opening a list to use count or sum on
+        }
+        if (metadata.getOperator() == min) {
+            write("Math.min.apply(null,[");         // using JS Math module to apply min on a list, opening the list
+        }
+    }
+
+    @Override
+    public void afterChildNary(NaryPredicateMetadata metadata, Metadata child, boolean hasNext, int depth) {
+        if (hasNext) {
+            switch ((DefaultOperator) metadata.getOperator()) {
+                case match_any:
+                    write(" || ");                       // using 'or' operator to match any of the predicate given
+                    break;
+                case match_all:
+                    write(" && ");                       // using 'and' operator for match all
+                    break;
+                case match_none:
+                    write(" && !");                      // 'and not' for match none
+                    break;
+                case min:
+                case sum:
+                case count:
+                    write(", ");                         // separating the list values
+                    break;
+            }
+        }
+    }
+
+    @Override
+    public void endNary(NaryPredicateMetadata metadata, int depth) {
+        if (metadata.getOperator() == count) {
+            write("].reduce(function(acc,val){if(val){return acc+1;}return acc;},0)");
+        }                                                       // using reduce method to count with an accumulator
+        if (metadata.getOperator() == min) {
+            write("])");                                    // closing the value list
+        }
+        if (metadata.getOperator() == sum) {
+            write("].reduce(function(acc,val){ return acc+val;},0)");
+        }                                                       // using reduce method to sum the value
     }
 
     @Override
@@ -84,15 +174,14 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
                     } else if (chainDateOpe[0] != -1) {
                         chainDateOpe[0] = -1;
                     }
-                    if (element.getReadable() == as_a_number                       // checking for special cases
-                            || element.getReadable() == as_string || dateOpeElem.contains(element.getReadable())) {
+                    if (element.getReadable() == age_at
+                            || element.getReadable() == as_a_number                       // checking for special cases
+                            || element.getReadable() == as_string || element.getReadable() == before
+                            || element.getReadable() == before_or_equals || element.getReadable() == after
+                            || element.getReadable() == after_or_equals) {
                         stack.addFirst(element);
                     } else {
-                        if (element.getReadable() == not) {
-                            stack.addFirst(element);
-                        } else {
-                            stack.add(element);
-                        }
+                        stack.add(element);
                     }
                     break;
                 case STRING_VALUE:
@@ -117,6 +206,18 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
         }
     }
 
+    @Override
+    public void beforeChildUnary(UnaryPredicateMetadata metadata, Metadata child, int depth) {
+        manageOperator((DefaultOperator) metadata.getOperator(), null);
+
+    }
+
+    @Override
+    public void endUnary(UnaryPredicateMetadata metadata, int depth) {
+        write(")");
+    }
+
+
     /**
      * This function manage the different parameters of the predicate
      *
@@ -133,31 +234,12 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
                     manageOperator((DefaultOperator) e.getReadable(), stack);
                     break;
                 case VALUE:
-                    if (isInATemporalFunction && e.getType() != FIELD) {
-                        write("\'" + e.toString() + "\'");
-                    } else if (e.toString().startsWith(" : ")) {
-                        String values = e.toString().replace(" : ", "");
-                        values = values.replace("[", "");
-                        values = values.replace("]", "");
-                        String[] valuesArray = values.split(", ");
-                        values = "[";
-                        if (StringUtils.isNumeric(e.toString())) {
-                            for (int i = 0; i < valuesArray.length - 1; i++) {
-                                values = values + valuesArray[i] + ", ";
-                            }
-                            values = values + valuesArray[valuesArray.length - 1];
-                        } else {
-                            for (int i = 0; i < valuesArray.length - 1; i++) {
-                                values = values + "\'" + valuesArray[i] + "\', ";
-                            }
-                            values = values + "\'" + valuesArray[valuesArray.length - 1] + "\'";
-                        }
-                        values = values + "]";
-                        write(values);
-                    } else if (StringUtils.isNumeric(e.toString())) {
+                    System.out.println(e.getType());
+                    System.out.println(e);
+                    if (StringUtils.isNumeric(e.toString())) {
                         write(e.toString());
                     } else {
-                        write(e.toString());
+                        write("\'" + e.toString() + "\'");
                     }
                     break;
                 case STRING_VALUE:
@@ -176,6 +258,7 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
                             write("$");
                             endWithCount--;
                         }
+                        write("/");
                         useRegexp = 0;
                     } else {
                         write("\'" + e.toString() + "\'");
@@ -222,21 +305,8 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
                     write(")");
                 }
                 break;
-            case and:
-                write(" && ");
-                break;
-            case or:
-                write(" || ");
-                break;
-            case count:
-                break;
-            case sum:
-                break;
-            case min:
-                break;
             case not:
                 write("!(");
-                parentheseDepth++;
                 break;
             case always_true:
                 write("true");
@@ -247,15 +317,13 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
             case times:
                 write(" * ");
                 break;
-            case when:
-                break;
             case equals:
                 boolean testDateOpe = false;
                 if (dateOpeElem.contains(stack.getFirst().getReadable())) {
                     write(".isSame(");
                     testDateOpe = true;
                 } else {
-                    write(" == ");
+                    write(" === ");
                 }
                 stackTmp.add(stack.pollFirst());
                 manageStack(stackTmp);
@@ -264,38 +332,31 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
                 }
                 break;
             case not_equals:
-                write(" != ");
+                write(" !== ");
                 if (stack != null) {
                     stackTmp.add(stack.pollFirst());
                     manageStack(stackTmp);
                 }
                 break;
             case is_null:
-                write(" === ( null || undefined || \"\" )");
+                write(" === ( null || undefined || \"\" ) ");
                 break;
             case is_not_null:
-                write(" !== ( null && undefined && \"\" )");
+                write(" !== ( null && undefined && \"\" ) ");
                 break;
             case minus:
-                write("moment(");
-                stackTmp.add(stack.pollFirst());
-                manageStack(stackTmp);
-                write(").subtract(");
+                write(".subtract(");
                 stackTmp.add(stack.pollFirst());
                 manageStack(stackTmp);
                 write(",\'" + stack.pollFirst().toString() + "\')");
                 break;
             case plus:
-                write("moment(");
-                stackTmp.add(stack.pollFirst());
-                manageStack(stackTmp);
-                write(").add(");
+                write(".add(");
                 stackTmp.add(stack.pollFirst());
                 manageStack(stackTmp);
                 write(",\'" + stack.pollFirst().toString() + "\')");
                 break;
             case after:
-                isInATemporalFunction = true;
                 write("moment(");
                 stackTmp.add(stack.pollFirst());
                 manageStack(stackTmp);
@@ -304,21 +365,18 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
                 manageStack(stackTmp);
                 write(")");
                 parentheseDepth++;
-                isInATemporalFunction = false;
                 break;
             case after_or_equals:
-                isInATemporalFunction = true;
                 write("moment(");
                 stackTmp.add(stack.pollFirst());
                 manageStack(stackTmp);
-                write(").isSameOrAfter(");
+                write(").isSameOrAfter(moment(");
                 stackTmp.add(stack.pollFirst());
                 manageStack(stackTmp);
+                write(")");
                 parentheseDepth++;
-                isInATemporalFunction = false;
                 break;
             case age_at:
-                isInATemporalFunction = true;
                 write("Math.round(Math.abs(moment(");               // using Math.round(...)
                 stackTmp.add(stack.pollFirst());                        // ex : diff(31may,31may + 1month) = 0.96
                 manageStack(stackTmp);
@@ -331,21 +389,16 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
                 write(")");
                 formatAgeAtOperator(stack);
                 write(", \'years\')))");
-                isInATemporalFunction = false;
                 break;
             case before:
-                isInATemporalFunction = true;
                 write("moment(" + stack.pollFirst().toString() +
                         ").isBefore(" + stack.pollFirst().toString());
                 parentheseDepth++;
-                isInATemporalFunction = false;
                 break;
             case before_or_equals:
-                isInATemporalFunction = true;
                 write("moment(" + stack.pollFirst().toString() +
-                        ").isSameOrBefore(\'" + stack.pollFirst().toString() + "\'");
+                        ").isSameOrBefore(" + stack.pollFirst().toString());
                 parentheseDepth++;
-                isInATemporalFunction = false;
                 break;
             case matches:
                 write(".match(/");
@@ -354,56 +407,27 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
                 isMatch = 1;
                 break;
             case match_any:
-                write(".some(function(element){\n" +
-                        "return ");
-                stackTmp.add(stack.pollFirst());
-                manageStack(stackTmp);
-                write(".indexOf(element) >= 0 ;\n" +
-                        "})");
-                break;
-            case match_all:
-                write(".every(function(element){\n" +
-                        "return ");
-                stackTmp.add(stack.pollFirst());
-                manageStack(stackTmp);
-                write(".every(function(elt){ return elt.match(element);});\n})");
-                break;
-            case match_none:
-                write(".every(function(element){\n" +
-                        "return ");
-                stackTmp.add(stack.pollFirst());
-                manageStack(stackTmp);
-                write(".indexOf(element) < 0 ;\n" +
-                        "})");
+//                write();
                 break;
             case contains:
                 write(".some(function(element){\n" +
-                        "return element.match(");
+                        "return element.match(\"");
                 stackTmp.add(stack.pollFirst());
                 manageStack(stackTmp);
-                write(");\n" +
+                write("\");\n" +
                         "})");
                 break;
             case starts_with:
-                write(".some(function(element){\n" +
-                        "return element.match(/^");
+                write(".match(/^");
                 startWithCount++;
                 parentheseDepth++;
                 useRegexp = 1;
-                stackTmp.add(stack.pollFirst());
-                manageStack(stackTmp);
-                write("/)}");
                 break;
             case ends_with:
-                write(".some(function(element){\n" +
-                        "return element.match(/.*");
+                write(".match(/.*");
                 endWithCount++;
                 parentheseDepth++;
                 useRegexp = 1;
-                stackTmp.add(stack.pollFirst());
-                manageStack(stackTmp);
-                write("/)}");
-
                 break;
             case greater_than:
                 write(" > ");
@@ -416,8 +440,6 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
                 if (stack != null && stack.size() > 0) {
                     write(stack.pollFirst().toString());
                 }
-                break;
-            case xor:
                 break;
             case is:
                 write(" === ");
@@ -460,68 +482,39 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
                 write("moment(moment().format(\"YYYY-MM-DD\")).subtract(");
                 break;
             case first_day_of_this_month:
-                write("moment(");
-                stackTmp.add(stack.pollFirst());
-                manageStack(stackTmp);
-                write(").startOf('month')");
+                write("moment(moment().format(\"YYYY-MM-DD\")).startOf('month')");
                 break;
             case first_day_of_this_year:
-                write("moment(");
-                stackTmp.add(stack.pollFirst());
-                manageStack(stackTmp);
-                write(").startOf('year')");
+                write("moment(moment().format(\"YYYY-MM-DD\")).startOf('year')");
                 break;
             case last_day_of_this_month:
-                write("moment(");
-                stackTmp.add(stack.pollFirst());
-                manageStack(stackTmp);
-                write(").endOf('month')");
+                write("moment(moment().format(\"YYYY-MM-DD\")).endOf('month')");
                 break;
             case last_day_of_this_year:
-                write("moment(");
-                stackTmp.add(stack.pollFirst());
-                manageStack(stackTmp);
-                write(").endOf('year')");
+                write("moment(moment().format(\"YYYY-MM-DD\")).endOf('year')");
                 break;
             case first_day_of_month:
-                write("moment(");
-                stackTmp.add(stack.pollFirst());
-                manageStack(stackTmp);
-                write(").startOf('month')");
+                write(".startOf('month')");
                 break;
             case first_day_of_next_month:
-                write("moment(");
-                stackTmp.add(stack.pollFirst());
-                manageStack(stackTmp);
-                write(").add(1,'month').startOf('month')");
+                write("moment(moment().format(\"YYYY-MM-DD\")).add(1,'month').startOf('month')");
                 break;
             case first_day_of_year:
-                write("moment(");
-                stackTmp.add(stack.pollFirst());
-                manageStack(stackTmp);
-                write(").startOf('year')");
+                write(".startOf('year')");
                 break;
             case first_day_of_next_year:
-                write("moment(");
-                stackTmp.add(stack.pollFirst());
-                manageStack(stackTmp);
-                write(").add(1,'year').startOf('year')");
+                write("moment(moment().format(\"YYYY-MM-DD\")).add(1,'year').startOf('year')");
                 break;
             case last_day_of_month:
-                write("moment(");
-                stackTmp.add(stack.pollFirst());
-                manageStack(stackTmp);
-                write(").endOf('month')");
+                write(".endOf('month')");
                 break;
             case last_day_of_year:
-                write("moment(");
-                stackTmp.add(stack.pollFirst());
-                manageStack(stackTmp);
-                write(").endOf('year')");
+                write(".endOf('year')");
                 break;
         }
 
     }
+
 
     /**
      * age_at operator specials cases for the parameter in moment.js
@@ -557,6 +550,7 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
             }
         }
     }
+
 
     /**
      * XOR operator construction and writing
