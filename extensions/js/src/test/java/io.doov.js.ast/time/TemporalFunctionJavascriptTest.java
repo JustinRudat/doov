@@ -34,14 +34,16 @@ public class TemporalFunctionJavascriptTest {
     private static ByteArrayOutputStream ops;
     private static ResourceBundleProvider bundle;
     private static ScriptEngine engine;
-    private static AstJavascriptExpVisitor visitor;
+    private static AstJavascriptVisitor visitor;
+    private static JavascriptWriter writer;
 
     @BeforeAll
     static void init() {
         ops = new ByteArrayOutputStream();
         bundle = BUNDLE;
         engine = ScriptEngineFactory.create();
-        visitor = new AstJavascriptExpVisitor(ops, bundle, Locale.ENGLISH);
+        visitor = new AstJavascriptVisitor(ops, bundle, Locale.ENGLISH);
+        writer = new JavascriptWriter(ops);
     }
 
     @BeforeEach
@@ -54,7 +56,8 @@ public class TemporalFunctionJavascriptTest {
     @Test
     void eval_with() throws ScriptException {
         rule = when(A.with(firstDayOfYear()).eq(LocalDate.of(1, 1, 1))).validate();
-        visitor.browse(rule.metadata(), 0);
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -63,7 +66,8 @@ public class TemporalFunctionJavascriptTest {
     @Test
     void eval_minus_value() throws ScriptException {
         rule = when(A.minus(1, ChronoUnit.DAYS).eq(LocalDate.of(1, 1, 1))).validate();
-        visitor.browse(rule.metadata(), 0);
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -72,7 +76,8 @@ public class TemporalFunctionJavascriptTest {
     @Test
     void eval_minus_field() throws ScriptException {
         rule = when(A.minus(B, ChronoUnit.DAYS).eq(LocalDate.of(1, 1, 1))).validate();
-        visitor.browse(rule.metadata(), 0);
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -81,7 +86,8 @@ public class TemporalFunctionJavascriptTest {
     @Test
     void eval_plus_value() throws ScriptException {
         rule = when(A.plus(1, ChronoUnit.DAYS).eq(LocalDate.of(1, 1, 1))).validate();
-        visitor.browse(rule.metadata(), 0);
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -90,7 +96,8 @@ public class TemporalFunctionJavascriptTest {
     @Test
     void eval_plus_field() throws ScriptException {
         rule = when(A.plus(B, ChronoUnit.DAYS).eq(LocalDate.of(1, 1, 1))).validate();
-        visitor.browse(rule.metadata(), 0);
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);

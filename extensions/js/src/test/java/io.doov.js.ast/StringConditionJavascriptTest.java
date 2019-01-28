@@ -27,14 +27,16 @@ public class StringConditionJavascriptTest {
     private static ByteArrayOutputStream ops;
     private static ResourceBundleProvider bundle;
     private static ScriptEngine engine;
-    private static AstJavascriptExpVisitor visitor;
+    private static AstJavascriptVisitor visitor;
+    private static JavascriptWriter writer;
 
     @BeforeAll
     static void init() {
         ops = new ByteArrayOutputStream();
         bundle = BUNDLE;
         engine = ScriptEngineFactory.create();
-        visitor = new AstJavascriptExpVisitor(ops, bundle, Locale.ENGLISH);
+        visitor = new AstJavascriptVisitor(ops, bundle, Locale.ENGLISH);
+        writer = new JavascriptWriter(ops);
     }
 
     @BeforeEach
@@ -44,18 +46,30 @@ public class StringConditionJavascriptTest {
     }
 
     @Test
-    void eval_contains() throws ScriptException {
+    void eval_contains_false() throws ScriptException {
         rule = when(A.contains("zz")).validate();
-        visitor.browse(rule.metadata(), 0);
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
     }
 
     @Test
+    void eval_contains_true() throws ScriptException {
+        rule = when(A.contains("alu")).validate();
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
+        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
+        result = engine.eval(request).toString();
+        assertEquals("true", result);
+    }
+
+    @Test
     void eval_matches() throws ScriptException {
         rule = when(A.matches("z+")).validate();
-        visitor.browse(rule.metadata(), 0);
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -64,7 +78,8 @@ public class StringConditionJavascriptTest {
     @Test
     void eval_startsWith_false() throws ScriptException {
         rule = when(A.startsWith("zz")).validate();
-        visitor.browse(rule.metadata(), 0);
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -73,7 +88,8 @@ public class StringConditionJavascriptTest {
     @Test
     void eval_endsWith_false() throws ScriptException {
         rule = when(A.endsWith("zz")).validate();
-        visitor.browse(rule.metadata(), 0);
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
 
         result = engine.eval(request).toString();
@@ -84,7 +100,8 @@ public class StringConditionJavascriptTest {
     @Test
     void eval_startsWith_true() throws ScriptException {
         rule = when(A.startsWith("val")).validate();
-        visitor.browse(rule.metadata(), 0);
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -93,7 +110,8 @@ public class StringConditionJavascriptTest {
     @Test
     void eval_endsWith_true() throws ScriptException {
         rule = when(A.endsWith("ue")).validate();
-        visitor.browse(rule.metadata(), 0);
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
 
         result = engine.eval(request).toString();
