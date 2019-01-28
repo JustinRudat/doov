@@ -38,14 +38,16 @@ public class ComplexConditionJavascriptTest {
     private static ByteArrayOutputStream ops;
     private static ResourceBundleProvider bundle;
     private static ScriptEngine engine;
-    private static AstJavascriptExpVisitor visitor;
+    private static AstJavascriptVisitor visitor;
+    private static JavascriptWriter writer;
 
     @BeforeAll
     static void init() {
         ops = new ByteArrayOutputStream();
         bundle = BUNDLE;
         engine = ScriptEngineFactory.create();
-        visitor = new AstJavascriptExpVisitor(ops, bundle, Locale.ENGLISH);
+        visitor = new AstJavascriptVisitor(ops, bundle, Locale.ENGLISH);
+        writer = new JavascriptWriter(ops);
     }
 
     @BeforeEach
@@ -56,9 +58,10 @@ public class ComplexConditionJavascriptTest {
 
     @Test
     void reduce_times_chaining() throws ScriptException {
-        rule = when(configMaxEmailSize.times(2).eq(6)).validate().withShortCircuit(false);
+        rule = when(configMaxEmailSize.times(2).times(2).times(2).eq(24)).validate().withShortCircuit(false);
 
-        visitor.browse(rule.metadata(), 0);
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -71,7 +74,8 @@ public class ComplexConditionJavascriptTest {
         rule = when(today().plus(2, YEARS)
                 .yearsBetween(today().plus(12, MONTHS).plus(1, YEARS))
                 .eq(0)).validate().withShortCircuit(false);
-        visitor.browse(rule.metadata(), 0);
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -83,7 +87,8 @@ public class ComplexConditionJavascriptTest {
         rule = when(userbd.plus(2, YEARS)
                 .yearsBetween(userbd.plus(12, MONTHS).plus(1, YEARS))
                 .eq(0)).validate().withShortCircuit(false);
-        visitor.browse(rule.metadata(), 0);
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -94,7 +99,8 @@ public class ComplexConditionJavascriptTest {
     void reduce_doc_todayEq() throws ScriptException {
         rule = when(today().plus(2, YEARS).minus(12, MONTHS).minus(1, YEARS)
                 .eq(today())).validate().withShortCircuit(false);
-        visitor.browse(rule.metadata(), 0);
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -102,13 +108,23 @@ public class ComplexConditionJavascriptTest {
     }
 
     @Test
-    void reduce_doc_value() throws ScriptException {
+    void reduce_doc_value_false() throws ScriptException {
         rule = when(userbd.yearsBetween(today()).eq(38)).validate().withShortCircuit(false);
-        visitor.browse(rule.metadata(), 0);
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
+    }
 
+    @Test
+    void reduce_doc_value_true() throws ScriptException {
+        rule = when(userbd.yearsBetween(today()).eq(39)).validate().withShortCircuit(false);
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
+        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
+        result = engine.eval(request).toString();
+        assertEquals("true", result);
     }
 
     @AfterEach

@@ -32,27 +32,29 @@ public class TemporalConditionJavascriptTest {
     private static ByteArrayOutputStream ops;
     private static ResourceBundleProvider bundle;
     private static ScriptEngine engine;
-    private static AstJavascriptExpVisitor visitor;
+    private static AstJavascriptVisitor visitor;
+    private static JavascriptWriter writer;
 
     @BeforeAll
     static void init() {
         ops = new ByteArrayOutputStream();
         bundle = BUNDLE;
         engine = ScriptEngineFactory.create();
-        visitor = new AstJavascriptExpVisitor(ops, bundle, Locale.ENGLISH);
+        visitor = new AstJavascriptVisitor(ops, bundle, Locale.ENGLISH);
+        writer = new JavascriptWriter(ops);
     }
 
     @BeforeEach
     void beforeEach() throws ScriptException {
         ops.reset();
-        evalMomentJs(engine);
         engine.eval(fieldModelToJS(model));
     }
 
     @Test
     void eval_eqCondition() throws ScriptException {
         rule = when(A.eq(B)).validate();
-        visitor.browse(rule.metadata(), 0);
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -61,7 +63,8 @@ public class TemporalConditionJavascriptTest {
     @Test
     void eval_before_value() throws ScriptException {
         rule = when(A.before(LocalDate.of(1, 1, 1))).validate();
-        visitor.browse(rule.metadata(), 0);
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -70,7 +73,8 @@ public class TemporalConditionJavascriptTest {
     @Test
     void eval_before_field() throws ScriptException {
         rule = when(B.before(A)).validate();
-        visitor.browse(rule.metadata(), 0);
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -79,7 +83,8 @@ public class TemporalConditionJavascriptTest {
     @Test
     void eval_before_condition() throws ScriptException {
         rule = when(A.before(LocalDateSuppliers.date(1, 1, 1))).validate();
-        visitor.browse(rule.metadata(), 0);
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -88,7 +93,8 @@ public class TemporalConditionJavascriptTest {
     @Test
     void eval_beforeOrEq_value() throws ScriptException {
         rule = when(A.beforeOrEq(LocalDate.of(1, 1, 1))).validate();
-        visitor.browse(rule.metadata(), 0);
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -97,7 +103,8 @@ public class TemporalConditionJavascriptTest {
     @Test
     void eval_beforeOrEq_condition() throws ScriptException {
         rule = when(A.beforeOrEq(LocalDateSuppliers.date(1, 1, 1))).validate();
-        visitor.browse(rule.metadata(), 0);
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -106,7 +113,8 @@ public class TemporalConditionJavascriptTest {
     @Test
     void eval_after_value() throws ScriptException {
         rule = when(A.after(LocalDate.of(2100, 1, 1))).validate();
-        visitor.browse(rule.metadata(), 0);
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -115,7 +123,8 @@ public class TemporalConditionJavascriptTest {
     @Test
     void eval_after_field() throws ScriptException {
         rule = when(A.after(B)).validate();
-        visitor.browse(rule.metadata(), 0);
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -124,7 +133,8 @@ public class TemporalConditionJavascriptTest {
     @Test
     void eval_after_condition() throws ScriptException {
         rule = when(A.after(LocalDateSuppliers.date(1, 1, 1))).validate();
-        visitor.browse(rule.metadata(), 0);
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -133,7 +143,8 @@ public class TemporalConditionJavascriptTest {
     @Test
     void eval_afterOrEq_value() throws ScriptException {
         rule = when(A.afterOrEq(LocalDate.of(2100, 1, 1))).validate();
-        visitor.browse(rule.metadata(), 0);
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -142,7 +153,8 @@ public class TemporalConditionJavascriptTest {
     @Test
     void eval_afterOrEq_condition() throws ScriptException {
         rule = when(A.afterOrEq(LocalDateSuppliers.date(2100, 1, 1))).validate();
-        visitor.browse(rule.metadata(), 0);
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);

@@ -10,7 +10,8 @@ import static org.apache.commons.lang3.StringUtils.isNumeric;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Locale;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -37,8 +38,10 @@ public class AstJavascriptExpVisitor extends AbstractAstVisitor {
     private boolean isInATemporalFunction = false;
     private ArrayList<Integer> countDateOperators = new ArrayList<>(); // allow to count and separate date operator
     // on their respective arguments
+    private Metadata leafMetadata;
 
     private int parenthesisDepth = 0;
+    private int indiceFirstParam = -1;
 
     public AstJavascriptExpVisitor(OutputStream ops, ResourceProvider bundle, Locale locale) {
         this.ops = ops;
@@ -71,14 +74,15 @@ public class AstJavascriptExpVisitor extends AbstractAstVisitor {
 
     @Override
     public void startLeaf(LeafPredicateMetadata<?> metadata, int depth) {
-        ArrayDeque<Element> stack = new ArrayDeque<>();
+        leafMetadata = metadata;
+        ArrayList<Element> stack = new ArrayList<>();
         final int[] chainDateOpe = new int[1];
         chainDateOpe[0] = -1;
         metadata.elements().forEach(
                 elt -> {
                     switch (elt.getType()) {
                         case OPERATOR:
-                            if(elt.getReadable() == with){
+                            if (elt.getReadable() == with) {
                                 break;
                             }
                             if (dateOpeElem.contains(elt.getReadable())) {
@@ -92,7 +96,7 @@ public class AstJavascriptExpVisitor extends AbstractAstVisitor {
                             } else if (chainDateOpe[0] != -1) {
                                 chainDateOpe[0] = -1;
                             }
-                            stack.addFirst(elt);
+                            stack.add(indiceFirstParam, elt);
                             break;
                         case FIELD:
                         case VALUE:
@@ -101,6 +105,9 @@ public class AstJavascriptExpVisitor extends AbstractAstVisitor {
                         case PARENTHESIS_RIGHT:
                         case TEMPORAL_UNIT:
                         case UNKNOWN:
+                            if (indiceFirstParam == -1) {
+                                indiceFirstParam = stack.size();
+                            }
                             stack.add(elt);
                             break;
                     }
@@ -109,22 +116,22 @@ public class AstJavascriptExpVisitor extends AbstractAstVisitor {
         manageStack(stack);
     }
 
-    private void manageStack(ArrayDeque<Element> stack) {
+    private void manageStack(ArrayList<Element> stack) {
         String values;
         while (stack.size() > 0) {
-            Element e = stack.pollFirst();
+            Element e = stack.remove(0);
             switch (e.getType()) {
                 case FIELD:
-                    if(isInATemporalFunction){
+                    if (isInATemporalFunction) {
                         write("moment(");
                         write(e.toString());
                         write(")");
-                    }else {
+                    } else {
                         write(e.toString());
                     }
                     break;
                 case OPERATOR:
-                    manageOperator((DefaultOperator) e.getReadable(), stack);
+                    manageOperator(e, stack);
                     break;
                 case VALUE:
                     values = e.toString();
@@ -189,24 +196,24 @@ public class AstJavascriptExpVisitor extends AbstractAstVisitor {
             values += "\'" + valuesArray[valuesArray.length - 1] + "\']";
         }
         write(values);
-        values = "";
     }
 
-    private void manageIterableField(ArrayDeque<Element> stack, ArrayDeque<Element> stackTmp) {
-        if (stack.getFirst().getReadable().toString().contains("IterableFieldInfo")) {
-            stackTmp.add(stack.pollFirst());
+    private void manageIterableField(ArrayList<Element> stack, ArrayList<Element> stackTmp) {
+        if (stack.get(0).getReadable().toString().contains("IterableFieldInfo")) {
+            stackTmp.add(stack.remove(0));
             manageStack(stackTmp);
         } else {
             write("[");
-            stackTmp.add(stack.pollFirst());
+            stackTmp.add(stack.remove(0));
             manageStack(stackTmp);
             write("]");
             useRegexp = true;
         }
     }
 
-    private void manageOperator(DefaultOperator operator, ArrayDeque<Element> stack) {
-        ArrayDeque<Element> stackTmp = new ArrayDeque<>();
+    private void manageOperator(Element element, ArrayList<Element> stack) {
+        ArrayList<Element> stackTmp = new ArrayList<>();
+        DefaultOperator operator = (DefaultOperator) element.getReadable();
         switch (operator) {
             case rule:
                 break;
@@ -215,23 +222,23 @@ public class AstJavascriptExpVisitor extends AbstractAstVisitor {
             case empty:
                 break;
             case and:
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write(" && ");
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 break;
             case or:
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write(" || ");
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 break;
             case match_any:
                 manageIterableField(stack, stackTmp);
                 write(".some(function(element){\n return ");
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write(".indexOf(element) >= 0 ;\n})");
                 useRegexp = false;
@@ -240,7 +247,7 @@ public class AstJavascriptExpVisitor extends AbstractAstVisitor {
                 manageIterableField(stack, stackTmp);
                 write(".every(function(element){\n" +
                         "return ");
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write(".every(function(elt){ return elt.match(element);});\n})");
                 useRegexp = false;
@@ -249,7 +256,7 @@ public class AstJavascriptExpVisitor extends AbstractAstVisitor {
                 manageIterableField(stack, stackTmp);
                 write(".every(function(element){\n" +
                         "return ");
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write(".indexOf(element) < 0;})");
                 useRegexp = false;
@@ -271,23 +278,23 @@ public class AstJavascriptExpVisitor extends AbstractAstVisitor {
                 write("false");
                 break;
             case times:
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write(" * ");
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 break;
             case when:
                 break;
             case equals:
-                if (dateOpeElem.contains(stack.getFirst().getReadable())) {
-                    stackTmp = stack.clone();
+                if (dateOpeElem.contains(stack.get(0).getReadable())) {
+                    stackTmp = (ArrayList<Element>) stack.clone();
                     stack.clear();
-                    stack.add(stackTmp.pollLast());
+                    stack.add(stackTmp.remove(stack.size() - 1));
                     manageStack(stackTmp);
                     testDateOpe = true;
                 } else {
-                    stackTmp.add(stack.pollFirst());
+                    stackTmp.add(stack.remove(0));
                     manageStack(stackTmp);
                 }
                 if (testDateOpe) {
@@ -298,7 +305,7 @@ public class AstJavascriptExpVisitor extends AbstractAstVisitor {
                 if (testDateOpe) {
                     write("\'");
                 }
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 if (testDateOpe) {
                     write("\')");
@@ -306,10 +313,10 @@ public class AstJavascriptExpVisitor extends AbstractAstVisitor {
                 }
                 break;
             case not_equals:
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write(" != ");
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 break;
             case is_null:
@@ -320,13 +327,13 @@ public class AstJavascriptExpVisitor extends AbstractAstVisitor {
                 break;
             case as_a_number:
                 write("parseInt(");
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write(")");
                 break;
             case as_string:
                 write("String(");
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write(")");
                 break;
@@ -338,32 +345,32 @@ public class AstJavascriptExpVisitor extends AbstractAstVisitor {
             case minus:
                 isInATemporalFunction = true;
                 write("moment(");
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write(").subtract(");
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
-                write(",\'" + stack.pollFirst().toString() + "\')");
+                write(",\'" + stack.remove(0).toString() + "\')");
                 testDateOpe = true;
                 isInATemporalFunction = false;
                 break;
             case plus:
                 isInATemporalFunction = true;
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write(".add(");
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
-                write(",\'" + stack.pollFirst().toString() + "\')");
+                write(",\'" + stack.remove(0).toString() + "\')");
                 testDateOpe = true;
                 isInATemporalFunction = false;
                 break;
             case after:
                 isInATemporalFunction = true;
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write(".isAfter(moment(");
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write(")");
                 parenthesisDepth++;
@@ -372,10 +379,10 @@ public class AstJavascriptExpVisitor extends AbstractAstVisitor {
             case after_or_equals:
                 isInATemporalFunction = true;
                 write("moment(");
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write(").isSameOrAfter(");
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 parenthesisDepth++;
                 isInATemporalFunction = false;
@@ -383,13 +390,13 @@ public class AstJavascriptExpVisitor extends AbstractAstVisitor {
             case age_at:
                 isInATemporalFunction = true;
                 write("Math.round(Math.abs(moment(");               // using Math.round(...)
-                stackTmp.add(stack.pollFirst());                        // ex : diff(31may,31may + 1month) = 0.96
+                stackTmp.add(stack.remove(0));                        // ex : diff(31may,31may + 1month) = 0.96
                 manageStack(stackTmp);
                 write(")");
                 formatAgeAtOperator(stack);
                 write(".diff(");                                   //Math.abs so the date order doesn't matter
                 write("moment(");
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write(")");
                 formatAgeAtOperator(stack);
@@ -398,42 +405,59 @@ public class AstJavascriptExpVisitor extends AbstractAstVisitor {
                 break;
             case before:
                 isInATemporalFunction = true;
-                write("moment(" + stack.pollFirst().toString() +
-                        ").isBefore(" + stack.pollFirst().toString());
+                stackTmp.add(stack.remove(0));
+                manageStack(stackTmp);
+                write(".isBefore(moment(");
+                stackTmp.add(stack.remove(0));
+                manageStack(stackTmp);
+                write(")");
                 parenthesisDepth++;
                 isInATemporalFunction = false;
                 break;
             case before_or_equals:
                 isInATemporalFunction = true;
-                write("moment(" + stack.pollFirst().toString() +
-                        ").isSameOrBefore(\'" + stack.pollFirst().toString() + "\'");
+                write("moment(");
+                stackTmp.add(stack.remove(0));
+                manageStack(stackTmp);
+                write(").isSameOrBefore(");
+                stackTmp.add(stack.remove(0));
+                manageStack(stackTmp);
                 parenthesisDepth++;
                 isInATemporalFunction = false;
                 break;
             case matches:
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write(".match(/");
                 useRegexp = true;
                 isMatch = true;
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write("/)");
                 break;
             case contains:
-                manageIterableField(stack, stackTmp);
-                write(".some(function(element){\n" +
-                        "return element.match(");
-                if (useRegexp) {
-                    write("/.*");
+                if (isSiblingIterable(element, false)) {
+                    stackTmp.add(stack.remove(0));
+                    manageStack(stackTmp);
+                    write(".every(function(element){ return ");
+                    stackTmp.add(stack.remove(0));
+                    manageStack(stackTmp);
+                    write(".some(function(elt){ return elt.match(element);});})");
+                } else {
+                    manageIterableField(stack, stackTmp);
+                    write(".some(function(element){\n" +
+                            "return element.match(");
+                    if (useRegexp) {
+                        write("/.*");
+                    }
+                    stackTmp.add(stack.remove(0));
+                    manageStack(stackTmp);
+                    if (useRegexp) {
+                        write(".*/");
+                    }
+                    write(");})");
+                    useRegexp = false;
                 }
-                stackTmp.add(stack.pollFirst());
-                manageStack(stackTmp);
-                if (useRegexp) {
-                    write(".*/");
-                }
-                write(");})");
-                useRegexp = false;
                 break;
             case starts_with:
                 manageIterableField(stack, stackTmp);
@@ -441,7 +465,7 @@ public class AstJavascriptExpVisitor extends AbstractAstVisitor {
                         "return element.match(/^");
                 startWithCount = true;
                 parenthesisDepth++;
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write("/)}");
                 useRegexp = false;
@@ -453,71 +477,77 @@ public class AstJavascriptExpVisitor extends AbstractAstVisitor {
                         "return element.match(/.*");
                 endWithCount = true;
                 parenthesisDepth++;
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write("/)}");
                 useRegexp = false;
                 endWithCount = false;
                 break;
             case greater_than:
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write(" > ");
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 break;
             case greater_or_equals:
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write(" >= ");
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 break;
             case xor:
+                stackTmp.add(stack.remove(0));
+                manageStack(stackTmp);
+                write(" ? !");
+                stackTmp.add(stack.get(0));
+                manageStack(stackTmp);
+                write(" : ");
                 break;
             case is:
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write(" === ");
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 break;
             case lesser_than:
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write(" < ");
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 break;
             case lesser_or_equals:
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write(" <= ");
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 break;
             case has_not_size:
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write(".length != ");
                 break;
             case has_size:
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write(".length == ");
                 break;
             case is_empty:
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write(".length == 0");
                 break;
             case is_not_empty:
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write(".length != 0");
                 break;
             case length_is:
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write(".length");
                 break;
@@ -532,65 +562,83 @@ public class AstJavascriptExpVisitor extends AbstractAstVisitor {
                 break;
             case first_day_of_this_month:
                 write("moment(");
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write(").startOf('month')");
                 break;
             case first_day_of_this_year:
                 write("moment(");
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write(").startOf('year')");
                 break;
             case last_day_of_this_month:
                 write("moment(");
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write(").endOf('month')");
                 break;
             case last_day_of_this_year:
                 write("moment(");
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write(").endOf('year')");
                 break;
             case first_day_of_month:
                 write("moment(");
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write(").startOf('month')");
                 break;
             case first_day_of_next_month:
                 write("moment(");
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write(").add(1,'month').startOf('month')");
                 break;
             case first_day_of_year:
                 write("moment(");
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write(").startOf('year')");
                 break;
             case first_day_of_next_year:
                 write("moment(");
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write(").add(1,'year').startOf('year')");
                 break;
             case last_day_of_month:
                 write("moment(");
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write(").endOf('month')");
                 break;
             case last_day_of_year:
                 write("moment(");
-                stackTmp.add(stack.pollFirst());
+                stackTmp.add(stack.remove(0));
                 manageStack(stackTmp);
                 write(").endOf('year')");
                 break;
         }
+    }
+
+    private boolean isSiblingIterable(Element element, boolean before) {
+        ArrayList<Element> flatData = (ArrayList<Element>) leafMetadata.flatten();
+        int elementIndex = flatData.indexOf(element);
+        if (elementIndex > 0 && elementIndex < flatData.size() - 1) {
+            if (before) {
+                if (flatData.get(elementIndex - 1).getReadable().toString().contains("Iterable")) {
+                    return true;
+                }
+            } else {
+                Element eltTmp = flatData.get(elementIndex + 1);
+                if (eltTmp.getReadable().toString().contains("Iterable") || eltTmp.toString().startsWith(" : ")) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @Override
@@ -622,20 +670,20 @@ public class AstJavascriptExpVisitor extends AbstractAstVisitor {
      *
      * @param stack the deque of the parameters not translated yet to Javascript predicate
      */
-    private void formatAgeAtOperator(ArrayDeque<Element> stack) {
+    private void formatAgeAtOperator(ArrayList<Element> stack) {
         if (countDateOperators.size() > 0) {
             while (countDateOperators.size() > 0 && countDateOperators.get(0) > 0) {
-                ArrayDeque<Element> stackTmp = new ArrayDeque<>();
-                if (stack.getFirst().getReadable() == with || stack.getFirst().getReadable() == plus
-                        || stack.getFirst().getReadable() == minus) {
-                    if (stack.getFirst().getReadable() == with) {
-                        stack.pollFirst();
-                        stackTmp.add(stack.pollFirst());
+                ArrayList<Element> stackTmp = new ArrayList<>();
+                if (stack.get(0).getReadable() == with || stack.get(0).getReadable() == plus
+                        || stack.get(0).getReadable() == minus) {
+                    if (stack.get(0).getReadable() == with) {
+                        stack.remove(0);
+                        stackTmp.add(stack.remove(0));
                         manageStack(stackTmp);
                     } else {                                      // working on plus and minus operators
-                        Element ope = stack.pollFirst();        // need the three first elements of the stack to manage
-                        Element duration = stack.pollFirst();   // these operators
-                        Element unit = stack.pollFirst();
+                        Element ope = stack.remove(0);        // need the three first elements of the stack to manage
+                        Element duration = stack.remove(0);   // these operators
+                        Element unit = stack.remove(0);
                         stackTmp.add(ope);
                         stackTmp.add(duration);
                         stackTmp.add(unit);
