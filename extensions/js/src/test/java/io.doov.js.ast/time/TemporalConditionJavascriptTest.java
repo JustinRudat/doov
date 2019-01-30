@@ -2,7 +2,6 @@ package io.doov.js.ast.time;
 
 import static io.doov.core.dsl.DOOV.when;
 import static io.doov.core.dsl.meta.i18n.ResourceBundleProvider.BUNDLE;
-import static io.doov.js.ast.ScriptEngineFactory.evalMomentJs;
 import static io.doov.js.ast.ScriptEngineFactory.fieldModelToJS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -33,7 +32,7 @@ public class TemporalConditionJavascriptTest {
     private static ResourceBundleProvider bundle;
     private static ScriptEngine engine;
     private static AstJavascriptVisitor visitor;
-    private static JavascriptWriter writer;
+    private static AstJavascriptWriter writer;
 
     @BeforeAll
     static void init() {
@@ -41,7 +40,7 @@ public class TemporalConditionJavascriptTest {
         bundle = BUNDLE;
         engine = ScriptEngineFactory.create();
         visitor = new AstJavascriptVisitor(ops, bundle, Locale.ENGLISH);
-        writer = new JavascriptWriter(ops);
+        writer = new AstJavascriptWriter(ops);
     }
 
     @BeforeEach
@@ -51,8 +50,18 @@ public class TemporalConditionJavascriptTest {
     }
 
     @Test
-    void eval_eqCondition() throws ScriptException {
+    void eval_eqCondition_field() throws ScriptException {
         rule = when(A.eq(B)).validate();
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
+        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
+        result = engine.eval(request).toString();
+        assertEquals("false", result);
+    }
+
+    @Test
+    void eval_eqCondition_value() throws ScriptException {
+        rule = when(A.eq(LocalDate.of(1, 1, 1))).validate();
         writer.writeRule(rule);
         //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));

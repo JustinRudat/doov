@@ -28,7 +28,7 @@ public class StringConditionJavascriptTest {
     private static ResourceBundleProvider bundle;
     private static ScriptEngine engine;
     private static AstJavascriptVisitor visitor;
-    private static JavascriptWriter writer;
+    private static AstJavascriptWriter writer;
 
     @BeforeAll
     static void init() {
@@ -36,7 +36,7 @@ public class StringConditionJavascriptTest {
         bundle = BUNDLE;
         engine = ScriptEngineFactory.create();
         visitor = new AstJavascriptVisitor(ops, bundle, Locale.ENGLISH);
-        writer = new JavascriptWriter(ops);
+        writer = new AstJavascriptWriter(ops);
     }
 
     @BeforeEach
@@ -66,7 +66,17 @@ public class StringConditionJavascriptTest {
     }
 
     @Test
-    void eval_matches() throws ScriptException {
+    void eval_matches_true() throws ScriptException {
+        rule = when(A.matches("alu")).validate();
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
+        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
+        result = engine.eval(request).toString();
+        assertEquals("true", result);
+    }
+
+    @Test
+    void eval_matches_false() throws ScriptException {
         rule = when(A.matches("z+")).validate();
         writer.writeRule(rule);
         //visitor.browse(rule.metadata(),0);

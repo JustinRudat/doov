@@ -39,7 +39,7 @@ public class ComplexConditionJavascriptTest {
     private static ResourceBundleProvider bundle;
     private static ScriptEngine engine;
     private static AstJavascriptVisitor visitor;
-    private static JavascriptWriter writer;
+    private static AstJavascriptWriter writer;
 
     @BeforeAll
     static void init() {
@@ -47,7 +47,7 @@ public class ComplexConditionJavascriptTest {
         bundle = BUNDLE;
         engine = ScriptEngineFactory.create();
         visitor = new AstJavascriptVisitor(ops, bundle, Locale.ENGLISH);
-        writer = new JavascriptWriter(ops);
+        writer = new AstJavascriptWriter(ops);
     }
 
     @BeforeEach
@@ -59,7 +59,6 @@ public class ComplexConditionJavascriptTest {
     @Test
     void reduce_times_chaining() throws ScriptException {
         rule = when(configMaxEmailSize.times(2).times(2).times(2).eq(24)).validate().withShortCircuit(false);
-
         writer.writeRule(rule);
         //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));

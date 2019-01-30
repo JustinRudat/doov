@@ -24,6 +24,7 @@ public class JavascriptWriter {
     private String output;
     private int anyAllNoneContains = -1;
     private int parenthesisCount = 0;
+    private int naryCountSumMin = -1;
     private boolean isAgeAtOperator = false;
     private boolean useRegexp = false;
     private boolean isMatch = false;
@@ -134,42 +135,59 @@ public class JavascriptWriter {
         return output;
     }
 
+    public void writeBinaryMetadata(Metadata metadata) {
+        metadata.children().forEach(child -> {
+            writeMetadata(child);
+        });
+    }
+
     public void writeMetadata(Metadata metadata) {
         if (metadata.children().count() >= 1) {
-            if (metadata.children().findFirst().get().type().toString().startsWith("NARY")) {
+            String metadataType = metadata.children().findFirst().get().type().toString();
+            if (metadataType.startsWith("NARY")) {
                 writeNaryMetadata(metadata.children().findFirst().get());
+            } else if (metadataType.startsWith("BIN")) {
+                manageMetadataElements(metadata);
             } else {
                 writeMetadata(metadata.children().findFirst().get());
             }
         } else {
-            List<Element> listMetadata = metadata.flatten();
-            String[] internOutput = new String[1];
-            internOutput[0] = "";
-            listMetadata.stream().forEach(element -> {
-                switch (element.getType()) {
-                    case FIELD:
-                        internOutput[0] = writeField(element, internOutput[0]);
-                        break;
-                    case OPERATOR:
-                        internOutput[0] = writeOperator(element, internOutput[0]);
-                        break;
-                    case VALUE:
-                    case STRING_VALUE:
-                        internOutput[0] = writeValue(element, internOutput[0]);
-                        break;
-                    case PARENTHESIS_LEFT:
-                        break;
-                    case PARENTHESIS_RIGHT:
-                        break;
-                    case TEMPORAL_UNIT:
-                        break;
-                    case UNKNOWN:
-                        break;
-                }
-
-            });
-            output += internOutput[0];
+            manageMetadataElements(metadata);
         }
+    }
+
+    public void manageMetadataElements(Metadata metadata) {
+        List<Element> listMetadata = metadata.flatten();
+        String[] internOutput = new String[1];
+        internOutput[0] = "";
+        listMetadata.stream().forEach(element -> {
+            switch (element.getType()) {
+                case FIELD:
+                    internOutput[0] = writeField(element, internOutput[0]);
+                    break;
+                case OPERATOR:
+                    if ((DefaultOperator) element.getReadable() == DefaultOperator.count) {
+                        System.out.println("test");
+                        metadata.children().findFirst().get().children().forEach(elt -> System.out.println(elt));
+                    }
+                    internOutput[0] = writeOperator(element, internOutput[0]);
+                    break;
+                case VALUE:
+                case STRING_VALUE:
+                    internOutput[0] = writeValue(element, internOutput[0]);
+                    break;
+                case PARENTHESIS_LEFT:
+                    break;
+                case PARENTHESIS_RIGHT:
+                    break;
+                case TEMPORAL_UNIT:
+                    break;
+                case UNKNOWN:
+                    break;
+            }
+
+        });
+        output += internOutput[0];
     }
 
     public String writeValue(Element element, String internOutput) {
@@ -229,11 +247,11 @@ public class JavascriptWriter {
             alreadyComputed = false;
             return internOutput;
         } else {
-            if(element.getReadable().toString().contains("Date")){
+            if (element.getReadable().toString().contains("Date")) {
                 return internOutput + "moment(" + element.toString() + ")";
             } else if (isTemporalPredicate) {
                 isTemporalPredicate = false;
-                if(isDiff) {
+                if (isDiff) {
                     return internOutput + "moment(" + element.toString() + ")";
                 }
 
@@ -271,11 +289,14 @@ public class JavascriptWriter {
                 return isSiblingIterable(element, true) ? internOutput + ".every(function(element){ return "
                         : "[" + internOutput + "].every(function(element){ return ";
             case count:
-                break;
+                naryCountSumMin = 0;
+                return internOutput + "[";
             case sum:
-                break;
+                naryCountSumMin = 1;
+                return internOutput + "[";
             case min:
-                break;
+                naryCountSumMin = 2;
+                return internOutput + "Math.min.apply(null,[";
             case not:
                 parenthesisCount++;
                 return "!(" + internOutput;
@@ -317,7 +338,7 @@ public class JavascriptWriter {
                 flatList = rule.metadata().flatten();
                 numValue = flatList.get(flatList.indexOf(element) + 1).toString();
                 tempValue = flatList.get(flatList.indexOf(element) + 2).toString();
-                if(isBeforeOrAfter){
+                if (isBeforeOrAfter) {
                     isBeforeOrAfter = false;
                     parenthesisCount--;
                     internOutput += ")";
@@ -329,7 +350,7 @@ public class JavascriptWriter {
                 flatList = rule.metadata().flatten();
                 numValue = flatList.get(flatList.indexOf(element) + 1).toString();
                 tempValue = flatList.get(flatList.indexOf(element) + 2).toString();
-                if(isBeforeOrAfter){
+                if (isBeforeOrAfter) {
                     isBeforeOrAfter = false;
                     parenthesisCount--;
                     internOutput += ")";
@@ -396,13 +417,13 @@ public class JavascriptWriter {
                 isMatch = true;
                 return "[" + internOutput + "].some(function(element){ return element.match(/.*";
             case greater_than:
-                if(isDiff){
+                if (isDiff) {
                     isDiff = false;
                     internOutput += ",\'years\')))";
                 }
                 return internOutput + " > ";
             case greater_or_equals:
-                if(isDiff){
+                if (isDiff) {
                     isDiff = false;
                     internOutput += ",\'years\')))";
                 }
@@ -412,19 +433,19 @@ public class JavascriptWriter {
                 manageXOR(internOutput, firstPassage);
                 return internOutput;
             case is:
-                if(isDiff){
+                if (isDiff) {
                     isDiff = false;
                     internOutput += ",\'years\')))";
                 }
                 return internOutput + " === ";
             case lesser_than:
-                if(isDiff){
+                if (isDiff) {
                     isDiff = false;
                     internOutput += ",\'years\')))";
                 }
                 return internOutput + " < ";
             case lesser_or_equals:
-                if(isDiff){
+                if (isDiff) {
                     isDiff = false;
                     internOutput += ",\'years\')))";
                 }
@@ -441,13 +462,13 @@ public class JavascriptWriter {
                 return internOutput + ".length";
             case today:
                 isTemporalPredicate = true;
-//                if (isDiff) {
-//                    isDiff = false;
-//                    isTemporalPredicate = false;
-//                    return internOutput + "moment(moment().format(\"YYYY-MM-DD\")),\'years\')))";
-//                } else {
-                    return internOutput + "moment(moment().format(\"YYYY-MM-DD\"))";
-//                }
+                //                if (isDiff) {
+                //                    isDiff = false;
+                //                    isTemporalPredicate = false;
+                //                    return internOutput + "moment(moment().format(\"YYYY-MM-DD\")),\'years\')))";
+                //                } else {
+                return internOutput + "moment(moment().format(\"YYYY-MM-DD\"))";
+            //                }
             case today_plus:
                 parenthesisCount++;
                 isTemporalPredicate = true;
