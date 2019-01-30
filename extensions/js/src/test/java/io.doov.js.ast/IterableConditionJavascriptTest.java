@@ -30,7 +30,7 @@ public class IterableConditionJavascriptTest {
     private static ResourceBundleProvider bundle;
     private static ScriptEngine engine;
     private static AstJavascriptVisitor visitor;
-    private static JavascriptWriter writer;
+    private static AstJavascriptWriter writer;
 
     @BeforeAll
     static void init() {
@@ -38,7 +38,7 @@ public class IterableConditionJavascriptTest {
         bundle = BUNDLE;
         engine = ScriptEngineFactory.create();
         visitor = new AstJavascriptVisitor(ops, bundle, Locale.ENGLISH);
-        writer = new JavascriptWriter(ops);
+        writer = new AstJavascriptWriter(ops);
     }
 
     @BeforeEach

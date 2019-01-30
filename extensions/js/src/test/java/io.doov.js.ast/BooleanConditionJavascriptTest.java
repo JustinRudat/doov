@@ -30,7 +30,7 @@ public class BooleanConditionJavascriptTest {
     private static ResourceBundleProvider bundle;
     private static ScriptEngine engine;
     private static AstJavascriptVisitor visitor;
-    private static JavascriptWriter writer;
+    private static AstJavascriptWriter writer;
 
     @BeforeAll
     static void init() {
@@ -38,7 +38,7 @@ public class BooleanConditionJavascriptTest {
         bundle = BUNDLE;
         engine = ScriptEngineFactory.create();
         visitor = new AstJavascriptVisitor(ops, bundle, Locale.ENGLISH);
-        writer = new JavascriptWriter(ops);
+        writer = new AstJavascriptWriter(ops);
     }
 
     @BeforeEach
@@ -65,6 +65,16 @@ public class BooleanConditionJavascriptTest {
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
+    }
+
+    @Test
+    void eval_not_second_false() throws ScriptException {
+        rule = when(A.and(true).not()).validate();
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
+        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
+        result = engine.eval(request).toString();
+        assertEquals("false", result);
     }
 
     @Test
