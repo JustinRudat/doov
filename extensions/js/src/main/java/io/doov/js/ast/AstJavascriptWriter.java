@@ -254,6 +254,7 @@ public class AstJavascriptWriter {
         List<Element> flatList;
         String numValue;
         String tempValue;
+        String tmpTodayValue;
         switch (operator) {
             case and:
                 returnValue += " && ";
@@ -452,34 +453,102 @@ public class AstJavascriptWriter {
                 returnValue += ".length ";
                 break;
             case today:
-                returnValue += "moment(moment().format(\"YYYY-MM-DD\"))";
-                break;
+                isTemporalPredicate = true;
+                //                if (isDiff) {
+                //                    isDiff = false;
+                //                    isTemporalPredicate = false;
+                //                    return returnValue + "moment(moment().format(\"YYYY-MM-DD\")),\'years\')))";
+                //                } else {
+                return returnValue + "moment(moment().format(\"YYYY-MM-DD\"))";
+            //                }
             case today_plus:
                 parenthesisCount++;
-                returnValue += "moment(moment().format(\"YYYY-MM-DD\")).add(";
-                break;
+                isTemporalPredicate = true;
+                return "moment(moment().format(\"YYYY-MM-DD\")).add(";
             case today_minus:
-                break;
+                parenthesisCount++;
+                isTemporalPredicate = true;
+                return "moment(moment().format(\"YYYY-MM-DD\")).subtract(";
             case first_day_of_this_month:
-                break;
+                isTemporalPredicate = true;
+                tmpTodayValue = returnValue + "moment(moment().format(\"YYYY-MM-DD\")).startOf('month')";
+                if (isDiff) {
+                    isDiff = false;
+                    tmpTodayValue += ",\'years\')))";
+                }
+                return tmpTodayValue;
             case first_day_of_this_year:
-                break;
+                isTemporalPredicate = true;
+                tmpTodayValue = returnValue + "moment(moment().format(\"YYYY-MM-DD\")).startOf('year')";
+                if (isDiff) {
+                    isDiff = false;
+                    tmpTodayValue += ",\'years\')))";
+                }
+                return tmpTodayValue;
             case last_day_of_this_month:
-                break;
+                isTemporalPredicate = true;
+                tmpTodayValue = returnValue + "moment(moment().format(\"YYYY-MM-DD\")).endOf('month')";
+                if (isDiff) {
+                    isDiff = false;
+                    tmpTodayValue += ",\'years\')))";
+                }
+                return tmpTodayValue;
             case last_day_of_this_year:
-                break;
+                isTemporalPredicate = true;
+                tmpTodayValue = returnValue + "moment(moment().format(\"YYYY-MM-DD\")).endOf('month')";
+                if (isDiff) {
+                    isDiff = false;
+                    tmpTodayValue += ",\'years\')))";
+                }
+                return tmpTodayValue;
             case first_day_of_month:
-                break;
+                isTemporalPredicate = true;
+                tmpTodayValue = returnValue + ".startOf('month')";
+                if (isDiff) {
+                    isDiff = false;
+                    tmpTodayValue += ",\'years\')))";
+                }
+                return tmpTodayValue;
             case first_day_of_next_month:
-                break;
+                isTemporalPredicate = true;
+                tmpTodayValue = returnValue + "moment(moment().format(\"YYYY-MM-DD\")).add(1,'month').startOf('month')";
+                if (isDiff) {
+                    isDiff = false;
+                    tmpTodayValue += ",\'years\')))";
+                }
+                return tmpTodayValue;
             case first_day_of_year:
-                break;
+                isTemporalPredicate = true;
+                tmpTodayValue = returnValue + ".startOf('year')";
+                if (isDiff) {
+                    isDiff = false;
+                    tmpTodayValue += ",\'years\')))";
+                }
+                return tmpTodayValue;
             case first_day_of_next_year:
-                break;
+                isTemporalPredicate = true;
+                tmpTodayValue = returnValue + "moment(moment().format(\"YYYY-MM-DD\")).add(1,'year').startOf('year')";
+                if (isDiff) {
+                    isDiff = false;
+                    tmpTodayValue += ",\'years\')))";
+                }
+                return tmpTodayValue;
             case last_day_of_month:
-                break;
+                isTemporalPredicate = true;
+                tmpTodayValue = returnValue + ".endOf('month')";
+                if (isDiff) {
+                    isDiff = false;
+                    tmpTodayValue += ",\'years\')))";
+                }
+                return tmpTodayValue;
             case last_day_of_year:
-                break;
+                isTemporalPredicate = true;
+                tmpTodayValue = returnValue + ".endOf('year')";
+                if (isDiff) {
+                    isDiff = false;
+                    tmpTodayValue += ",\'years\')))";
+                }
+                return tmpTodayValue;
         }
         return returnValue;
     }
@@ -506,6 +575,10 @@ public class AstJavascriptWriter {
             if (element.getType() == ElementType.STRING_VALUE) {
                 if (isTemporalPredicate) {
                     returnValue = "moment(\'" + element.toString() + "\')";
+                    if (isDiff) {
+                        isDiff = false;
+                        returnValue += ",\'years\')))";
+                    }
                 } else if (useRegexp) {
                     useRegexp = false;
                     if (isMatch) {
@@ -545,8 +618,16 @@ public class AstJavascriptWriter {
                         isTemporalPredicate = false;
                         if (element.getReadable().toString().contains("DateField")) {
                             returnValue = returnValue + "moment(" + element.toString() + ")";
+                            if (isDiff) {
+                                isDiff = false;
+                                returnValue += ",\'years\')))";
+                            }
                         } else {
                             returnValue = returnValue + "moment(\'" + element.toString() + "\')";
+                            if (isDiff) {
+                                isDiff = false;
+                                returnValue += ",\'years\')))";
+                            }
                         }
                     } else {
                         returnValue = returnValue + element.toString();

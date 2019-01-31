@@ -11,7 +11,7 @@ import javax.script.ScriptException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import io.doov.js.ast.JavascriptWriter;
+import io.doov.js.ast.AstJavascriptWriter;
 import io.doov.js.ast.ScriptEngineFactory;
 import io.doov.sample.validation.SampleRules;
 
@@ -41,7 +41,7 @@ public class JsVisitorTest {
                 })
                 .forEach(rule -> {
                     try {
-                        new JavascriptWriter(ops).writeRule(rule);
+                        new AstJavascriptWriter(ops).writeRule(rule);
                         System.out.println(new String(ops.toByteArray(), Charset.forName("UTF-8")));
                         System.out.println(engine.eval(ops.toString()).toString());
                         ops.reset();

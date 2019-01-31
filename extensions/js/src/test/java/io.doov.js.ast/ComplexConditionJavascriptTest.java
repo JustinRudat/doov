@@ -57,7 +57,7 @@ public class ComplexConditionJavascriptTest {
     }
 
     @Test
-    void reduce_times_chaining() throws ScriptException {
+    void eval_times_chaining() throws ScriptException {
         rule = when(configMaxEmailSize.times(2).times(2).times(2).eq(24)).validate().withShortCircuit(false);
         writer.writeRule(rule);
         //visitor.browse(rule.metadata(),0);
@@ -67,9 +67,9 @@ public class ComplexConditionJavascriptTest {
 
     }
 
-    // From here, doc stands for date_operator_chaining
+    // From here, cdo stands for complex date operator
     @Test
-    void reduce_doc_years_between() throws ScriptException {
+    void eval_cdo_years_between() throws ScriptException {
         rule = when(today().plus(2, YEARS)
                 .yearsBetween(today().plus(12, MONTHS).plus(1, YEARS))
                 .eq(0)).validate().withShortCircuit(false);
@@ -82,7 +82,7 @@ public class ComplexConditionJavascriptTest {
     }
 
     @Test
-    void reduce_doc_birthdateEq() throws ScriptException {
+    void eval_cdo_birthdateEq() throws ScriptException {
         rule = when(userbd.plus(2, YEARS)
                 .yearsBetween(userbd.plus(12, MONTHS).plus(1, YEARS))
                 .eq(0)).validate().withShortCircuit(false);
@@ -95,7 +95,7 @@ public class ComplexConditionJavascriptTest {
     }
 
     @Test
-    void reduce_doc_todayEq() throws ScriptException {
+    void eval_cdo_todayEq() throws ScriptException {
         rule = when(today().plus(2, YEARS).minus(12, MONTHS).minus(1, YEARS)
                 .eq(today())).validate().withShortCircuit(false);
         writer.writeRule(rule);
@@ -107,7 +107,7 @@ public class ComplexConditionJavascriptTest {
     }
 
     @Test
-    void reduce_doc_value_false() throws ScriptException {
+    void eval_cdo_value_false() throws ScriptException {
         rule = when(userbd.yearsBetween(today()).eq(38)).validate().withShortCircuit(false);
         writer.writeRule(rule);
         //visitor.browse(rule.metadata(),0);
@@ -117,7 +117,7 @@ public class ComplexConditionJavascriptTest {
     }
 
     @Test
-    void reduce_doc_value_true() throws ScriptException {
+    void eval_cdo_value_true() throws ScriptException {
         rule = when(userbd.yearsBetween(today()).eq(39)).validate().withShortCircuit(false);
         writer.writeRule(rule);
         //visitor.browse(rule.metadata(),0);
@@ -128,6 +128,6 @@ public class ComplexConditionJavascriptTest {
 
     @AfterEach
     void afterEach() {
-        System.out.println(request + " -> " + result);
+        System.out.println(request + " -> " + result + "\n");
     }
 }
