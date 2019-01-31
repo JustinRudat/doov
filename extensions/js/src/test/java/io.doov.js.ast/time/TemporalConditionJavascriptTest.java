@@ -171,6 +171,6 @@ public class TemporalConditionJavascriptTest {
 
     @AfterEach
     void afterEach() {
-        System.out.println(request + " -> " + result);
+        System.out.println(request + " -> " + result + "\n");
     }
 }
