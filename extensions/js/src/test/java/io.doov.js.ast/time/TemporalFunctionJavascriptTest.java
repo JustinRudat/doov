@@ -2,6 +2,7 @@ package io.doov.js.ast.time;
 
 import static io.doov.core.dsl.DOOV.when;
 import static io.doov.core.dsl.meta.i18n.ResourceBundleProvider.BUNDLE;
+import static io.doov.core.dsl.time.LocalDateSuppliers.today;
 import static io.doov.core.dsl.time.TemporalAdjuster.firstDayOfYear;
 import static io.doov.js.ast.ScriptEngineFactory.evalMomentJs;
 import static io.doov.js.ast.ScriptEngineFactory.fieldModelToJS;
@@ -101,6 +102,36 @@ public class TemporalFunctionJavascriptTest {
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
+    }
+
+    @Test
+    void eval_between_days() throws ScriptException {
+        rule = when(today().plus(B, ChronoUnit.DAYS).daysBetween(today()).eq(1)).validate();
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
+        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
+        result = engine.eval(request).toString();
+        assertEquals("true", result);
+    }
+
+    @Test
+    void eval_between_months() throws ScriptException {
+        rule = when(today().plus(B, ChronoUnit.MONTHS).monthsBetween(today()).eq(1)).validate();
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
+        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
+        result = engine.eval(request).toString();
+        assertEquals("true", result);
+    }
+
+    @Test
+    void eval_between_years() throws ScriptException {
+        rule = when(today().plus(B, ChronoUnit.YEARS).yearsBetween(today()).eq(1)).validate();
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
+        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
+        result = engine.eval(request).toString();
+        assertEquals("true", result);
     }
 
     @AfterEach

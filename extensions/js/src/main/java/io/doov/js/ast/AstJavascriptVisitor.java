@@ -9,7 +9,8 @@ import static org.apache.commons.lang3.StringUtils.isNumeric;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Locale;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -50,7 +51,9 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
 
     private void initializeDateOperator() {
         dateOpeElem.add(plus);
-        dateOpeElem.add(age_at);
+        dateOpeElem.add(age_at_months);
+        dateOpeElem.add(age_at_years);
+        dateOpeElem.add(age_at_days);
         dateOpeElem.add(minus);
         dateOpeElem.add(today_minus);
         dateOpeElem.add(today_minus);
@@ -461,7 +464,7 @@ public class AstJavascriptVisitor extends AbstractAstVisitor {
                 }
                 parentheseDepth++;
                 break;
-            case age_at:
+            case age_at_years:
                 isTemporalPredicate = true;
                 indiceFirstArg--;
                 if (!startedChaining) {
