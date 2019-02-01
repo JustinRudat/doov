@@ -5,6 +5,7 @@ package io.doov.core.dsl.impl.time;
 
 import static io.doov.core.dsl.DOOV.when;
 import static io.doov.core.dsl.lang.ReduceType.FAILURE;
+import static io.doov.core.dsl.time.LocalDateSuppliers.today;
 import static io.doov.core.dsl.time.TemporalAdjuster.firstDayOfYear;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -88,6 +89,39 @@ public class TemporalFunctionTest {
         assertFalse(result.value());
         assertThat(rule.readable(LOCALE)).isEqualTo("rule when A + B day(s) = 0001-01-01 validate");
         assertThat(result.getFailureCause(LOCALE)).isEqualTo("A + B day(s) = 0001-01-01");
+    }
+
+    @Test
+    void days_between_plus() {
+        rule = when(A.daysBetween(today().plus(B, ChronoUnit.DAYS)).eq(2)).validate();
+        result = rule.executeOn(model);
+        reduce = result.reduce(FAILURE);
+
+        assertFalse(result.value());
+        assertThat(rule.readable(LOCALE)).isEqualTo("rule when A age at as days today + B day(s) = 2 validate");
+        assertThat(result.getFailureCause(LOCALE)).isEqualTo("A age at as days today + B day(s) = 2");
+    }
+
+    @Test
+    void months_between_plus() {
+        rule = when(A.monthsBetween(today().plus(B, ChronoUnit.MONTHS)).eq(2)).validate();
+        result = rule.executeOn(model);
+        reduce = result.reduce(FAILURE);
+
+        assertFalse(result.value());
+        assertThat(rule.readable(LOCALE)).isEqualTo("rule when A age at as months today + B month(s) = 2 validate");
+        assertThat(result.getFailureCause(LOCALE)).isEqualTo("A age at as months today + B month(s) = 2");
+    }
+
+    @Test
+    void years_between_plus() {
+        rule = when(A.yearsBetween(today().plus(B, ChronoUnit.YEARS)).eq(2)).validate();
+        result = rule.executeOn(model);
+        reduce = result.reduce(FAILURE);
+
+        assertFalse(result.value());
+        assertThat(rule.readable(LOCALE)).isEqualTo("rule when A age at as years today + B year(s) = 2 validate");
+        assertThat(result.getFailureCause(LOCALE)).isEqualTo("A age at as years today + B year(s) = 2");
     }
 
     @AfterEach
