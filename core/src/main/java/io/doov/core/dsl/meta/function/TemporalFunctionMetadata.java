@@ -13,9 +13,7 @@ import java.util.function.Supplier;
 
 import io.doov.core.dsl.DslField;
 import io.doov.core.dsl.impl.DefaultCondition;
-import io.doov.core.dsl.meta.Element;
-import io.doov.core.dsl.meta.Metadata;
-import io.doov.core.dsl.meta.MetadataType;
+import io.doov.core.dsl.meta.*;
 import io.doov.core.dsl.meta.predicate.LeafPredicateMetadata;
 
 public class TemporalFunctionMetadata extends LeafPredicateMetadata<TemporalFunctionMetadata> {
@@ -102,23 +100,25 @@ public class TemporalFunctionMetadata extends LeafPredicateMetadata<TemporalFunc
 
     // age at
 
-    public static TemporalFunctionMetadata ageAtValueMetadata(DefaultCondition<?> condition, Object value) {
-        return new TemporalFunctionMetadata(FIELD_PREDICATE).valueCondition(condition).operator(age_at)
+    public static TemporalFunctionMetadata ageAtValueMetadata(DefaultCondition<?> condition,
+            Object value, DefaultOperator ageAt) {
+        return new TemporalFunctionMetadata(FIELD_PREDICATE).valueCondition(condition).operator(ageAt)
                 .valueObject(value);
     }
 
     public static TemporalFunctionMetadata ageAtTemporalFieldMetadata(DefaultCondition<?> condition,
-            DslField<?> field) {
-        return new TemporalFunctionMetadata(FIELD_PREDICATE).valueCondition(condition).operator(age_at).field(field);
+            DslField<?> field, DefaultOperator ageAt) {
+        return new TemporalFunctionMetadata(FIELD_PREDICATE).valueCondition(condition).operator(ageAt).field(field);
     }
 
     public static TemporalFunctionMetadata ageAtTemporalConditionMetadata(DefaultCondition<?> c1,
-            DefaultCondition<?> c2) {
-        return new TemporalFunctionMetadata(FIELD_PREDICATE).valueCondition(c1).operator(age_at).valueCondition(c2);
+            DefaultCondition<?> c2, DefaultOperator ageAt) {
+        return new TemporalFunctionMetadata(FIELD_PREDICATE).valueCondition(c1).operator(ageAt).valueCondition(c2);
     }
 
-    public static TemporalFunctionMetadata ageAtSupplierMetadata(DefaultCondition<?> condition, Supplier<?> supplier) {
-        return new TemporalFunctionMetadata(FIELD_PREDICATE).valueCondition(condition).operator(age_at)
+    public static TemporalFunctionMetadata ageAtSupplierMetadata(DefaultCondition<?> condition,
+            Supplier<?> supplier, DefaultOperator ageAt) {
+        return new TemporalFunctionMetadata(FIELD_PREDICATE).valueCondition(condition).operator(ageAt)
                 .valueSupplier(supplier);
     }
 

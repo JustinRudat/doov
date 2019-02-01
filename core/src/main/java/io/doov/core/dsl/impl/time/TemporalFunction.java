@@ -3,6 +3,9 @@
  */
 package io.doov.core.dsl.impl.time;
 
+import static io.doov.core.dsl.meta.DefaultOperator.age_at_days;
+import static io.doov.core.dsl.meta.DefaultOperator.age_at_months;
+import static io.doov.core.dsl.meta.DefaultOperator.age_at_years;
 import static io.doov.core.dsl.meta.function.TemporalAdjusterMetadata.withMetadata;
 import static io.doov.core.dsl.meta.function.TemporalFunctionMetadata.*;
 import static java.time.temporal.ChronoUnit.DAYS;
@@ -36,12 +39,12 @@ public abstract class TemporalFunction<N extends Temporal> extends TemporalCondi
 
     @Override
     protected final TemporalFunction<N> temporalCondition(PredicateMetadata metadata,
-                    BiFunction<DslModel, Context, Optional<N>> value) {
+            BiFunction<DslModel, Context, Optional<N>> value) {
         return temporalFunction(metadata, value);
     }
 
     protected abstract TemporalFunction<N> temporalFunction(PredicateMetadata metadata,
-                    BiFunction<DslModel, Context, Optional<N>> value);
+            BiFunction<DslModel, Context, Optional<N>> value);
 
     /**
      * Returns a temporal function that returns the node value with given temporal adjuster applied.
@@ -51,59 +54,59 @@ public abstract class TemporalFunction<N extends Temporal> extends TemporalCondi
      */
     public final TemporalFunction<N> with(TemporalAdjuster adjuster) {
         return temporalCondition(metadata.merge(withMetadata(metadata, adjuster.getMetadata())), (model,
-                        context) -> value(model, context).map(v -> withFunction(adjuster.getAdjuster()).apply(v)));
+                context) -> value(model, context).map(v -> withFunction(adjuster.getAdjuster()).apply(v)));
     }
 
     /**
      * Returns a temporal function that returns the node value minus given temporal value and unit.
      *
      * @param value the minus value
-     * @param unit the minus unit
+     * @param unit  the minus unit
      * @return the temporal function
      */
     public final TemporalFunction<N> minus(int value, TemporalUnit unit) {
         return temporalCondition(metadata.merge(minusMetadata(metadata, value, unit)),
-                        (model, context) -> value(model, context).map(v -> minusFunction(value, unit).apply(v)));
+                (model, context) -> value(model, context).map(v -> minusFunction(value, unit).apply(v)));
     }
 
     /**
      * Returns a temporal function that returns the node value minus given temporal field value and unit.
      *
      * @param value the minus field value
-     * @param unit the minus unit
+     * @param unit  the minus unit
      * @return the temporal function
      */
     public final TemporalFunction<N> minus(NumericFieldInfo<Integer> value, TemporalUnit unit) {
         return temporalCondition(metadata.merge(minusMetadata(metadata, value, unit)),
-                        (model, context) -> value(model, context)
-                                        .flatMap(l -> Optional.ofNullable(model.<Integer> get(value.id()))
-                                                        .map(r -> minusFunction(r, unit).apply(l))));
+                (model, context) -> value(model, context)
+                        .flatMap(l -> Optional.ofNullable(model.<Integer> get(value.id()))
+                                .map(r -> minusFunction(r, unit).apply(l))));
     }
 
     /**
      * Returns a temporal function that returns the node value plus given temporal value and unit.
      *
      * @param value the plus value
-     * @param unit the plus unit
+     * @param unit  the plus unit
      * @return the temporal function
      */
     public final TemporalFunction<N> plus(int value, TemporalUnit unit) {
         return temporalCondition(metadata.merge(plusMetadata(metadata, value, unit)),
-                        (model, context) -> value(model, context).map(v -> plusFunction(value, unit).apply(v)));
+                (model, context) -> value(model, context).map(v -> plusFunction(value, unit).apply(v)));
     }
 
     /**
      * Returns a temporal function that returns the node value plus given temporal field value and unit.
      *
      * @param value the plus field value
-     * @param unit the plus unit
+     * @param unit  the plus unit
      * @return the temporal function
      */
     public final TemporalFunction<N> plus(NumericFieldInfo<Integer> value, TemporalUnit unit) {
         return temporalCondition(metadata.merge(plusMetadata(metadata, value, unit)),
-                        (model, context) -> value(model, context)
-                                        .flatMap(l -> Optional.ofNullable(model.<Integer> get(value.id()))
-                                                        .map(r -> plusFunction(r, unit).apply(l))));
+                (model, context) -> value(model, context)
+                        .flatMap(l -> Optional.ofNullable(model.<Integer> get(value.id()))
+                                .map(r -> plusFunction(r, unit).apply(l))));
     }
 
     /**
@@ -113,7 +116,8 @@ public abstract class TemporalFunction<N extends Temporal> extends TemporalCondi
      * @return the numeric function
      */
     public final NumericFunction<Integer> ageAt(N value) {
-        return new IntegerFunction(timeBetween(ageAtValueMetadata(this, value), YEARS, value));
+        return new IntegerFunction(timeBetween(ageAtValueMetadata(this,
+                value, age_at_years), YEARS, value));
     }
 
     /**
@@ -123,7 +127,8 @@ public abstract class TemporalFunction<N extends Temporal> extends TemporalCondi
      * @return the numeric function
      */
     public final NumericFunction<Integer> ageAt(TemporalFieldInfo<N> value) {
-        return new IntegerFunction(timeBetween(ageAtTemporalFieldMetadata(this, value), YEARS, value));
+        return new IntegerFunction(timeBetween(ageAtTemporalFieldMetadata(this,
+                value, age_at_years), YEARS, value));
     }
 
     /**
@@ -133,7 +138,8 @@ public abstract class TemporalFunction<N extends Temporal> extends TemporalCondi
      * @return the numeric function
      */
     public final NumericFunction<Integer> ageAt(TemporalFunction<N> value) {
-        return new IntegerFunction(timeBetween(ageAtTemporalConditionMetadata(this, value), YEARS, value));
+        return new IntegerFunction(timeBetween(ageAtTemporalConditionMetadata(this,
+                value, age_at_years), YEARS, value));
     }
 
     /**
@@ -143,7 +149,8 @@ public abstract class TemporalFunction<N extends Temporal> extends TemporalCondi
      * @return the numeric function
      */
     public final NumericFunction<Integer> ageAt(Supplier<N> value) {
-        return new IntegerFunction(timeBetween(ageAtSupplierMetadata(this, value), YEARS, value));
+        return new IntegerFunction(timeBetween(ageAtSupplierMetadata(this,
+                value, age_at_years), YEARS, value));
     }
 
     /**
@@ -153,7 +160,8 @@ public abstract class TemporalFunction<N extends Temporal> extends TemporalCondi
      * @return the numeric function
      */
     public final NumericFunction<Integer> daysBetween(N value) {
-        return new IntegerFunction(timeBetween(ageAtValueMetadata(this, value), DAYS, value));
+        return new IntegerFunction(timeBetween(ageAtValueMetadata(this,
+                value, age_at_days), DAYS, value));
     }
 
     /**
@@ -163,7 +171,8 @@ public abstract class TemporalFunction<N extends Temporal> extends TemporalCondi
      * @return the numeric function
      */
     public final NumericFunction<Integer> daysBetween(TemporalFieldInfo<N> value) {
-        return new IntegerFunction(timeBetween(ageAtTemporalFieldMetadata(this, value), DAYS, value));
+        return new IntegerFunction(timeBetween(ageAtTemporalFieldMetadata(this,
+                value, age_at_days), DAYS, value));
     }
 
     /**
@@ -173,7 +182,8 @@ public abstract class TemporalFunction<N extends Temporal> extends TemporalCondi
      * @return the numeric function
      */
     public final NumericFunction<Integer> daysBetween(TemporalFunction<N> value) {
-        return new IntegerFunction(timeBetween(ageAtTemporalConditionMetadata(this, value), DAYS, value));
+        return new IntegerFunction(timeBetween(ageAtTemporalConditionMetadata(this,
+                value, age_at_days), DAYS, value));
     }
 
     /**
@@ -183,7 +193,8 @@ public abstract class TemporalFunction<N extends Temporal> extends TemporalCondi
      * @return the numeric function
      */
     public final NumericFunction<Integer> daysBetween(Supplier<N> value) {
-        return new IntegerFunction(timeBetween(ageAtSupplierMetadata(this, value), DAYS, value));
+        return new IntegerFunction(timeBetween(ageAtSupplierMetadata(this,
+                value, age_at_days), DAYS, value));
     }
 
     /**
@@ -193,7 +204,8 @@ public abstract class TemporalFunction<N extends Temporal> extends TemporalCondi
      * @return the numeric function
      */
     public final NumericFunction<Integer> monthsBetween(N value) {
-        return new IntegerFunction(timeBetween(ageAtValueMetadata(this, value), MONTHS, value));
+        return new IntegerFunction(timeBetween(ageAtValueMetadata(this,
+                value, age_at_months), MONTHS, value));
     }
 
     /**
@@ -203,7 +215,8 @@ public abstract class TemporalFunction<N extends Temporal> extends TemporalCondi
      * @return the numeric function
      */
     public final NumericFunction<Integer> monthsBetween(TemporalFieldInfo<N> value) {
-        return new IntegerFunction(timeBetween(ageAtTemporalFieldMetadata(this, value), MONTHS, value));
+        return new IntegerFunction(timeBetween(ageAtTemporalFieldMetadata(this,
+                value, age_at_months), MONTHS, value));
     }
 
     /**
@@ -213,7 +226,8 @@ public abstract class TemporalFunction<N extends Temporal> extends TemporalCondi
      * @return the numeric function
      */
     public final NumericFunction<Integer> monthsBetween(TemporalFunction<N> value) {
-        return new IntegerFunction(timeBetween(ageAtTemporalConditionMetadata(this, value), MONTHS, value));
+        return new IntegerFunction(timeBetween(ageAtTemporalConditionMetadata(this,
+                value, age_at_months), MONTHS, value));
     }
 
     /**
@@ -223,7 +237,8 @@ public abstract class TemporalFunction<N extends Temporal> extends TemporalCondi
      * @return the numeric function
      */
     public final NumericFunction<Integer> monthsBetween(Supplier<N> value) {
-        return new IntegerFunction(timeBetween(ageAtSupplierMetadata(this, value), MONTHS, value));
+        return new IntegerFunction(timeBetween(ageAtSupplierMetadata(this,
+                value, age_at_months), MONTHS, value));
     }
 
     /**
@@ -233,7 +248,8 @@ public abstract class TemporalFunction<N extends Temporal> extends TemporalCondi
      * @return the numeric function
      */
     public final NumericFunction<Integer> yearsBetween(N value) {
-        return new IntegerFunction(timeBetween(ageAtValueMetadata(this, value), YEARS, value));
+        return new IntegerFunction(timeBetween(ageAtValueMetadata(this,
+                value, age_at_years), YEARS, value));
     }
 
     /**
@@ -243,7 +259,8 @@ public abstract class TemporalFunction<N extends Temporal> extends TemporalCondi
      * @return the numeric function
      */
     public final NumericFunction<Integer> yearsBetween(TemporalFieldInfo<N> value) {
-        return new IntegerFunction(timeBetween(ageAtTemporalFieldMetadata(this, value), YEARS, value));
+        return new IntegerFunction(timeBetween(ageAtTemporalFieldMetadata(this,
+                value, age_at_years), YEARS, value));
     }
 
     /**
@@ -253,7 +270,8 @@ public abstract class TemporalFunction<N extends Temporal> extends TemporalCondi
      * @return the numeric function
      */
     public final NumericFunction<Integer> yearsBetween(TemporalFunction<N> value) {
-        return new IntegerFunction(timeBetween(ageAtTemporalConditionMetadata(this, value), YEARS, value));
+        return new IntegerFunction(timeBetween(ageAtTemporalConditionMetadata(this,
+                value, age_at_years), YEARS, value));
     }
 
     /**
@@ -263,29 +281,30 @@ public abstract class TemporalFunction<N extends Temporal> extends TemporalCondi
      * @return the numeric condition
      */
     public final NumericFunction<Integer> yearsBetween(Supplier<N> value) {
-        return new IntegerFunction(timeBetween(ageAtSupplierMetadata(this, value), YEARS, value));
+        return new IntegerFunction(timeBetween(ageAtSupplierMetadata(this,
+                value, age_at_years), YEARS, value));
     }
 
     private NumericFunction<Long> timeBetween(PredicateMetadata metadata, ChronoUnit unit, N value) {
         return new LongFunction(metadata, (model, context) -> value(model, context)
-                        .flatMap(l -> Optional.ofNullable(value).map(r -> betweenFunction(unit).apply(l, r))));
+                .flatMap(l -> Optional.ofNullable(value).map(r -> betweenFunction(unit).apply(l, r))));
     }
 
     private NumericFunction<Long> timeBetween(PredicateMetadata metadata, ChronoUnit unit,
-                    TemporalFieldInfo<N> value) {
+            TemporalFieldInfo<N> value) {
         return new LongFunction(metadata, (model, context) -> value(model, context)
-                        .flatMap(l -> valueModel(model, value).map(r -> betweenFunction(unit).apply(l, r))));
+                .flatMap(l -> valueModel(model, value).map(r -> betweenFunction(unit).apply(l, r))));
     }
 
     private NumericFunction<Long> timeBetween(PredicateMetadata metadata, ChronoUnit unit,
-                    TemporalCondition<N> value) {
+            TemporalCondition<N> value) {
         return new LongFunction(metadata, (model, context) -> value(model, context).flatMap(
-                        l -> value.getFunction().apply(model, context).map(r -> betweenFunction(unit).apply(l, r))));
+                l -> value.getFunction().apply(model, context).map(r -> betweenFunction(unit).apply(l, r))));
     }
 
     private NumericFunction<Long> timeBetween(PredicateMetadata metadata, ChronoUnit unit, Supplier<N> value) {
         return new LongFunction(metadata, (model, context) -> value(model, context)
-                        .flatMap(l -> Optional.ofNullable(value.get()).map(r -> betweenFunction(unit).apply(l, r))));
+                .flatMap(l -> Optional.ofNullable(value.get()).map(r -> betweenFunction(unit).apply(l, r))));
     }
 
 }
