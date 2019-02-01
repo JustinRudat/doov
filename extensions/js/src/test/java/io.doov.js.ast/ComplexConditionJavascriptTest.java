@@ -2,6 +2,7 @@ package io.doov.js.ast;
 
 import static io.doov.core.dsl.DOOV.when;
 import static io.doov.core.dsl.meta.i18n.ResourceBundleProvider.BUNDLE;
+import static io.doov.core.dsl.time.LocalDateSuppliers.firstDayOfThisYear;
 import static io.doov.core.dsl.time.LocalDateSuppliers.today;
 import static io.doov.js.ast.ScriptEngineFactory.fieldModelToJS;
 import static java.time.temporal.ChronoUnit.MONTHS;
@@ -32,7 +33,8 @@ public class ComplexConditionJavascriptTest {
             D = model.stringField("", "D");
     private LocalDateFieldInfo userbd = model.localDateField(LocalDate.of(1980, 1, 1), "userbd");
     ;
-    private IntegerFieldInfo configMaxEmailSize = model.intField(3, "maxsize");
+    private IntegerFieldInfo configMaxEmailSize = model.intField(3, "maxsize"),
+            ageat = model.intField(39, "ageat");
     private String request, result;
 
     private static ByteArrayOutputStream ops;
@@ -116,9 +118,42 @@ public class ComplexConditionJavascriptTest {
         assertEquals("false", result);
     }
 
+    // eq operator can't accept numerical fonction as parameter
     @Test
     void eval_cdo_value_true() throws ScriptException {
         rule = when(userbd.yearsBetween(today()).eq(39)).validate().withShortCircuit(false);
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
+        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
+        result = engine.eval(request).toString();
+        assertEquals("true", result);
+    }
+
+    //@Disabled("no distinction between days, month and year. age_at -> yearBetween by default")
+    @Test
+    void eval_daysBetween_eq() throws ScriptException {
+        rule = when(today().daysBetween(firstDayOfThisYear()).eq(firstDayOfThisYear().daysBetween(today()))).validate().withShortCircuit(false);
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
+        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
+        result = engine.eval(request).toString();
+        assertEquals("true", result);
+    }
+
+    //@Disabled("no distinction between days, month and year. age_at -> yearBetween by default")
+    @Test
+    void eval_monthsBetween_eq() throws ScriptException {
+        rule = when(today().monthsBetween(firstDayOfThisYear()).eq(firstDayOfThisYear().monthsBetween(today()))).validate().withShortCircuit(false);
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
+        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
+        result = engine.eval(request).toString();
+        assertEquals("true", result);
+    }
+
+    @Test
+    void eval_yearsBetween_eq() throws ScriptException {
+        rule = when(today().yearsBetween(firstDayOfThisYear()).eq(0)).validate().withShortCircuit(false);
         writer.writeRule(rule);
         //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));

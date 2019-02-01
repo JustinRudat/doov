@@ -22,7 +22,8 @@ public class StringConditionJavascriptTest {
 
     private ValidationRule rule;
     private static GenericModel model = new GenericModel();
-    private static StringFieldInfo A = model.stringField("value", "A");
+    private static StringFieldInfo A = model.stringField("value", "A"),
+            B = model.stringField("value", "B");
     private String request, result = "";
     private static ByteArrayOutputStream ops;
     private static ResourceBundleProvider bundle;
@@ -123,10 +124,29 @@ public class StringConditionJavascriptTest {
         writer.writeRule(rule);
         //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
-
         result = engine.eval(request).toString();
         assertEquals("true", result);
 
+    }
+
+    @Test
+    void eval_equal_field_true() throws ScriptException {
+        rule = when(A.eq(B)).validate();
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
+        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
+        result = engine.eval(request).toString();
+        assertEquals("true", result);
+    }
+
+    @Test
+    void eval_equal_value_true() throws ScriptException {
+        rule = when(A.eq("value")).validate();
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
+        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
+        result = engine.eval(request).toString();
+        assertEquals("true", result);
     }
 
     @AfterEach
