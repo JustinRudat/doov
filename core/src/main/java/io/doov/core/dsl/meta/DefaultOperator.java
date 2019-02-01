@@ -46,24 +46,26 @@ public enum DefaultOperator implements Operator {
     with("with"), //
     minus("minus"), //
     plus("plus"), //
-    after("after", BOOLEAN), //
-    after_or_equals("after or equals", BOOLEAN), //
-    age_at("age at"), //
-    before("before", BOOLEAN), //
-    before_or_equals("before or equals", BOOLEAN), //
-    matches("matches", BOOLEAN), //
-    contains("contains", BOOLEAN), //
-    starts_with("starts with", BOOLEAN), //
-    ends_with("ends with", BOOLEAN), //
-    greater_than(">", BOOLEAN), //
-    greater_or_equals(">=", BOOLEAN), //
-    is("is", BOOLEAN), //
-    lesser_than("<", BOOLEAN), //
-    lesser_or_equals("<=", BOOLEAN), //
-    has_not_size("has not size", BOOLEAN), //
-    has_size("has size", BOOLEAN), //
-    is_empty("is empty", BOOLEAN), //
-    is_not_empty("is not empty", BOOLEAN), //
+    after("after"), //
+    after_or_equals("after or equals"), //
+    age_at_months("age at as months"), //
+    age_at_years("age at as years"), //
+    age_at_days("age at as days"), //
+    before("before"), //
+    before_or_equals("before or equals"), //
+    matches("matches"), //
+    contains("contains"), //
+    starts_with("starts with"), //
+    ends_with("ends with"), //
+    greater_than(">"), greater_or_equals(">="), //
+    xor("xor"), //
+    is("is"), //
+    lesser_than("<"), //
+    lesser_or_equals("<="), //
+    has_not_size("has not size"), //
+    has_size("has size"), //
+    is_empty("is empty"), //
+    is_not_empty("is not empty"), //
     length_is("length is"), //
     lambda("-function-"), //
 
