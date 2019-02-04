@@ -50,7 +50,6 @@ public class StringConditionJavascriptTest {
     void eval_contains_false() throws ScriptException {
         rule = when(A.contains("zz")).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -60,7 +59,6 @@ public class StringConditionJavascriptTest {
     void eval_contains_true() throws ScriptException {
         rule = when(A.contains("alu")).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -70,7 +68,6 @@ public class StringConditionJavascriptTest {
     void eval_matches_true() throws ScriptException {
         rule = when(A.matches("alu")).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -80,7 +77,6 @@ public class StringConditionJavascriptTest {
     void eval_matches_false() throws ScriptException {
         rule = when(A.matches("z+")).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -90,7 +86,6 @@ public class StringConditionJavascriptTest {
     void eval_startsWith_false() throws ScriptException {
         rule = when(A.startsWith("zz")).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -100,7 +95,6 @@ public class StringConditionJavascriptTest {
     void eval_endsWith_false() throws ScriptException {
         rule = when(A.endsWith("zz")).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
 
         result = engine.eval(request).toString();
@@ -112,7 +106,6 @@ public class StringConditionJavascriptTest {
     void eval_startsWith_true() throws ScriptException {
         rule = when(A.startsWith("val")).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -122,7 +115,6 @@ public class StringConditionJavascriptTest {
     void eval_endsWith_true() throws ScriptException {
         rule = when(A.endsWith("ue")).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -133,7 +125,6 @@ public class StringConditionJavascriptTest {
     void eval_equal_field_true() throws ScriptException {
         rule = when(A.eq(B)).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -143,7 +134,6 @@ public class StringConditionJavascriptTest {
     void eval_equal_value_true() throws ScriptException {
         rule = when(A.eq("value")).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);

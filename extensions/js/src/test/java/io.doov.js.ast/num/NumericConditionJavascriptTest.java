@@ -51,7 +51,6 @@ public class NumericConditionJavascriptTest {
     void eval_lesserThan_value() throws ScriptException {
         rule = when(A.lesserThan(0)).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -61,7 +60,6 @@ public class NumericConditionJavascriptTest {
     void eval_lesserThan_field() throws ScriptException {
         rule = when(B.lesserThan(A)).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -71,7 +69,6 @@ public class NumericConditionJavascriptTest {
     void eval_lesserOrEquals_value() throws ScriptException {
         rule = when(A.lesserOrEquals(0)).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -81,7 +78,6 @@ public class NumericConditionJavascriptTest {
     void eval_lesserOrEquals_field() throws ScriptException {
         rule = when(B.lesserOrEquals(A)).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -91,7 +87,6 @@ public class NumericConditionJavascriptTest {
     void eval_greaterThan_value() throws ScriptException {
         rule = when(A.greaterThan(2)).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -101,7 +96,6 @@ public class NumericConditionJavascriptTest {
     void eval_greaterThan_field() throws ScriptException {
         rule = when(A.greaterThan(B)).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -111,7 +105,6 @@ public class NumericConditionJavascriptTest {
     void eval_greaterOrEquals_value() throws ScriptException {
         rule = when(A.greaterOrEquals(2)).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -121,7 +114,6 @@ public class NumericConditionJavascriptTest {
     void eval_greaterOrEquals_field() throws ScriptException {
         rule = when(A.greaterOrEquals(B)).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);

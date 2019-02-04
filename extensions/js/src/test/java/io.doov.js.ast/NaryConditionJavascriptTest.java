@@ -62,7 +62,6 @@ public class NaryConditionJavascriptTest {
     void eval_count_value_sup() throws ScriptException {
         rule = when(count(A.startsWith("val"), B.matches("[a-z]+")).greaterThan(0)).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -72,7 +71,6 @@ public class NaryConditionJavascriptTest {
     void eval_count_value_eq() throws ScriptException {
         rule = when(count(A.startsWith("val"), B.matches("[a-z]+")).eq(2)).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -82,7 +80,6 @@ public class NaryConditionJavascriptTest {
     void eval_sum_eq_value_true() throws ScriptException {
         rule = when(sum(E, F, G, H).eq(100)).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -92,7 +89,6 @@ public class NaryConditionJavascriptTest {
     void eval_sum_eq_value_false() throws ScriptException {
         rule = when(sum(E, F, G, H).eq(10)).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -102,7 +98,6 @@ public class NaryConditionJavascriptTest {
     void eval_sum_sup_value_false() throws ScriptException {
         rule = when(sum(E, F, G, H).greaterThan(110)).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -112,7 +107,6 @@ public class NaryConditionJavascriptTest {
     void eval_sum_sup_value_true() throws ScriptException {
         rule = when(sum(E, F, G, H).greaterThan(90)).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -122,7 +116,6 @@ public class NaryConditionJavascriptTest {
     void eval_min_eq_value_true() throws ScriptException {
         rule = when(min(E, F, G, H).eq(10)).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -132,7 +125,6 @@ public class NaryConditionJavascriptTest {
     void eval_min_eq_value_false() throws ScriptException {
         rule = when(min(E, F, G, H).eq(20)).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -142,7 +134,6 @@ public class NaryConditionJavascriptTest {
     void eval_min_sup_value_true() throws ScriptException {
         rule = when(min(E, F, G, H).greaterThan(5)).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -152,7 +143,6 @@ public class NaryConditionJavascriptTest {
     void eval_min_sup_field_false() throws ScriptException {
         rule = when(min(E, F, G, H).greaterThan(G)).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -162,7 +152,6 @@ public class NaryConditionJavascriptTest {
     void eval_min_eq_field_true() throws ScriptException {
         rule = when(min(E, F, G, H).eq(I)).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -172,7 +161,6 @@ public class NaryConditionJavascriptTest {
     void eval_min_eq_field_false() throws ScriptException {
         rule = when(min(E, F, G, H).eq(F)).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);

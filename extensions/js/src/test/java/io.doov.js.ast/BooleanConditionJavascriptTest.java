@@ -51,7 +51,6 @@ public class BooleanConditionJavascriptTest {
     void eval_not_false() throws ScriptException {
         rule = when(A.not()).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -61,7 +60,6 @@ public class BooleanConditionJavascriptTest {
     void eval_not_true() throws ScriptException {
         rule = when(B.not()).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -71,7 +69,6 @@ public class BooleanConditionJavascriptTest {
     void eval_not_second_false() throws ScriptException {
         rule = when(A.and(true).not()).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -81,7 +78,6 @@ public class BooleanConditionJavascriptTest {
     void eval_and_field() throws ScriptException {
         rule = when(A.and(B)).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -91,7 +87,6 @@ public class BooleanConditionJavascriptTest {
     void eval_and_value() throws ScriptException {
         rule = when(A.and(false)).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -101,7 +96,6 @@ public class BooleanConditionJavascriptTest {
     void eval_XOR_value_true() throws ScriptException {
         rule = when(A.xor(false)).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -111,7 +105,6 @@ public class BooleanConditionJavascriptTest {
     void eval_XOR_field_true() throws ScriptException {
         rule = when(A.xor(B)).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -121,7 +114,6 @@ public class BooleanConditionJavascriptTest {
     void eval_XOR_value_false() throws ScriptException {
         rule = when(A.xor(true)).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -131,7 +123,6 @@ public class BooleanConditionJavascriptTest {
     void eval_XOR_field_false() throws ScriptException {
         rule = when(C.xor(B)).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -141,7 +132,6 @@ public class BooleanConditionJavascriptTest {
     void eval_or_value() throws ScriptException {
         rule = when(B.or(false)).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -151,7 +141,6 @@ public class BooleanConditionJavascriptTest {
     void eval_or_field() throws ScriptException {
         rule = when(B.or(C)).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -161,7 +150,6 @@ public class BooleanConditionJavascriptTest {
     void eval_isTrue_false() throws ScriptException {
         rule = when(B.isTrue()).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -171,7 +159,6 @@ public class BooleanConditionJavascriptTest {
     void eval_isTrue_true() throws ScriptException {
         rule = when(A.isTrue()).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -181,7 +168,6 @@ public class BooleanConditionJavascriptTest {
     void eval_isFalse_false() throws ScriptException {
         rule = when(A.isFalse()).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -191,7 +177,6 @@ public class BooleanConditionJavascriptTest {
     void eval_isFalse_true() throws ScriptException {
         rule = when(B.isFalse()).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);

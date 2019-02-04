@@ -50,7 +50,6 @@ public class IterableConditionJavascriptTest {
     void eval_contains_false() throws ScriptException {
         rule = when(A.contains("b")).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -60,7 +59,6 @@ public class IterableConditionJavascriptTest {
     void eval_contains_true() throws ScriptException {
         rule = when(A.contains("aa")).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -70,7 +68,6 @@ public class IterableConditionJavascriptTest {
     void eval_containsAll_false() throws ScriptException {
         rule = when(A.containsAll("a", "b")).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -80,7 +77,6 @@ public class IterableConditionJavascriptTest {
     void eval_containsAll_true() throws ScriptException {
         rule = when(A.containsAll("a", "aa")).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -90,7 +86,6 @@ public class IterableConditionJavascriptTest {
     void eval_isNotEmpty_true() throws ScriptException {
         rule = when(A.isNotEmpty()).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -100,7 +95,6 @@ public class IterableConditionJavascriptTest {
     void eval_isEmpty() throws ScriptException {
         rule = when(A.isEmpty()).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -108,9 +102,8 @@ public class IterableConditionJavascriptTest {
 
     @Test
     void eval_noneMatch_collection_true() throws ScriptException {
-        rule = when(A.noneMatch(asList("zzz","jjj"))).validate();
+        rule = when(A.noneMatch(asList("zzz", "jjj"))).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -118,9 +111,8 @@ public class IterableConditionJavascriptTest {
 
     @Test
     void eval_noneMatch_collection_false() throws ScriptException {
-        rule = when(A.noneMatch(asList("aa","jjj"))).validate();
+        rule = when(A.noneMatch(asList("aa", "jjj"))).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -130,7 +122,6 @@ public class IterableConditionJavascriptTest {
     void eval_hasSize_false() throws ScriptException {
         rule = when(A.hasSize(1)).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -140,7 +131,6 @@ public class IterableConditionJavascriptTest {
     void eval_hasNotSize_false() throws ScriptException {
         rule = when(A.hasNotSize(2)).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -150,7 +140,6 @@ public class IterableConditionJavascriptTest {
     void eval_hasSize_true() throws ScriptException {
         rule = when(A.hasSize(2)).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -160,7 +149,6 @@ public class IterableConditionJavascriptTest {
     void eval_hasNotSize_true() throws ScriptException {
         rule = when(A.hasNotSize(3)).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
