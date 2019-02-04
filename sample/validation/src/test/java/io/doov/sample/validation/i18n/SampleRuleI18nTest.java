@@ -575,7 +575,8 @@ public class SampleRuleI18nTest {
         assertThat(elts).extracting(Element::getType).element(4).isEqualTo(ElementType.VALUE);
         assertThat(elts).extracting(Element::getReadable).extracting(Readable::readable).element(0)
                         .isEqualTo("user.birthdate");
-        assertThat(elts).extracting(Element::getReadable).extracting(Readable::readable).element(1).isEqualTo("age at");
+        assertThat(elts).extracting(Element::getReadable).extracting(Readable::readable).element(1).isEqualTo("age at" +
+                " as years");
         assertThat(elts).extracting(Element::getReadable).extracting(Readable::readable).element(2).isEqualTo("today");
         assertThat(elts).extracting(Element::getReadable).extracting(Readable::readable).element(3).isEqualTo(">=");
         assertThat(elts).extracting(Element::getReadable).extracting(Readable::readable).element(4).isEqualTo("18");

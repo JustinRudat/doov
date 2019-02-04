@@ -78,7 +78,7 @@ public class HtmlSampleRulesTest {
         assertThat(doc.select("div.percentage-value")).extracting(Element::text)
                 .containsExactly("100 %", "100 %", "100 %", "100 %", "100 %");
         assertThat(doc.select("span.dsl-token-operator")).extracting(Element::text)
-                .containsExactly("age at", "today", ">=", "length is", "<=", "=", "starts with");
+                .containsExactly("age at as years", "today", ">=", "length is", "<=", "=", "starts with");
         assertThat(doc.select("span.dsl-token-value")).extracting(Element::text)
                 .containsExactly("18", "FR", "'+33'");
         assertThat(doc.select("span.dsl-token-field")).extracting(Element::text)
@@ -106,7 +106,7 @@ public class HtmlSampleRulesTest {
         assertThat(doc.select("div.percentage-value")).extracting(Element::text)
                 .containsExactly("100 %", "100 %", "100 %", "100 %");
         assertThat(doc.select("span.dsl-token-operator")).extracting(Element::text)
-                .containsExactly("age at", "today", ">=", "length is", "<=", "=", "starts with");
+                .containsExactly("age at as years", "today", ">=", "length is", "<=", "=", "starts with");
         assertThat(doc.select("span.dsl-token-value")).extracting(Element::text)
                 .containsExactly("18", "FR", "'+33'");
         assertThat(doc.select("span.dsl-token-field")).extracting(Element::text)
@@ -195,7 +195,7 @@ public class HtmlSampleRulesTest {
         assertThat(doc.select("div.percentage-value")).extracting(Element::text)
                 .containsExactly("100 %");
         assertThat(doc.select("span.dsl-token-operator")).extracting(Element::text)
-                .containsExactly("age at", ">=");
+                .containsExactly("age at as years", ">=");
         assertThat(doc.select("span.dsl-token-value")).extracting(Element::text)
                 .containsExactly("18");
         assertThat(doc.select("span.dsl-token-field")).extracting(Element::text)
@@ -220,7 +220,7 @@ public class HtmlSampleRulesTest {
         assertThat(doc.select("div.percentage-value")).extracting(Element::text)
                 .containsExactly("100 %");
         assertThat(doc.select("span.dsl-token-operator")).extracting(Element::text)
-                .containsExactly("age at", "with", "first day of year", ">=");
+                .containsExactly("age at as years", "with", "first day of year", ">=");
         assertThat(doc.select("span.dsl-token-value")).extracting(Element::text)
                 .containsExactly("18");
         assertThat(doc.select("span.dsl-token-field")).extracting(Element::text)
@@ -297,7 +297,7 @@ public class HtmlSampleRulesTest {
         assertThat(doc.select("div.percentage-value")).extracting(Element::text)
                 .containsExactly("100 %");
         assertThat(doc.select("span.dsl-token-operator")).extracting(Element::text)
-                .containsExactly("age at", "today", ">=");
+                .containsExactly("age at as years", "today", ">=");
         assertThat(doc.select("span.dsl-token-field")).extracting(Element::text)
                 .containsExactly("user.birthdate");
         assertThat(doc.select("span.dsl-token-value")).extracting(Element::text)
