@@ -218,6 +218,19 @@ public class ComplexConditionJavascriptTest {
         assertEquals("true", result);
     }
 
+    @Test
+    void eval_complex_request() throws ScriptException {
+        rule = when(count(userFirstName.anyMatch("test", "note", "error", "name"), userLastName.matches("[A-Z]"),
+                userBirthdate.ageAt(today()).greaterOrEquals(18)).eq(3)
+                .and(today().plus(2, YEARS).minus(12, MONTHS).minus(1, YEARS).eq(today())))
+                .validate();
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
+        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
+        result = engine.eval(request).toString();
+        assertEquals("true", result);
+    }
+
     @AfterEach
     void afterEach() {
         System.out.println(request + " -> " + result + "\n");

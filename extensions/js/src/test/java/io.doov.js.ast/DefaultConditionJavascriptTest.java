@@ -180,7 +180,7 @@ public class DefaultConditionJavascriptTest {
     }
 
     @Test
-    void eval_noneMatch_values() throws ScriptException {
+    void eval_noneMatch_values_false() throws ScriptException {
         rule = when(A.noneMatch("value", "b", "c")).validate();
         writer.writeRule(rule);
         //visitor.browse(rule.metadata(),0);
@@ -190,13 +190,33 @@ public class DefaultConditionJavascriptTest {
     }
 
     @Test
-    void eval_noneMatch_collection() throws ScriptException {
+    void eval_noneMatch_collection_false() throws ScriptException {
         rule = when(A.noneMatch(asList("value", "b", "c"))).validate();
         writer.writeRule(rule);
         //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
+    }
+
+    @Test
+    void eval_noneMatch_values_true() throws ScriptException {
+        rule = when(A.noneMatch("a", "b", "c")).validate();
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
+        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
+        result = engine.eval(request).toString();
+        assertEquals("true", result);
+    }
+
+    @Test
+    void eval_noneMatch_collection_true() throws ScriptException {
+        rule = when(A.noneMatch(asList("a", "b", "c"))).validate();
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
+        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
+        result = engine.eval(request).toString();
+        assertEquals("true", result);
     }
 
     @AfterEach

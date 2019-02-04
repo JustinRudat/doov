@@ -58,11 +58,6 @@ public class NaryConditionJavascriptTest {
         engine.eval(fieldModelToJS(model));
     }
 
-    @AfterEach
-    void afterEach() {
-        System.out.println(request + " -> " + result + "\n");
-    }
-
     @Test
     void eval_count_value_sup() throws ScriptException {
         rule = when(count(A.startsWith("val"), B.matches("[a-z]+")).greaterThan(0)).validate();
@@ -182,5 +177,10 @@ public class NaryConditionJavascriptTest {
         result = engine.eval(request).toString();
         assertEquals("false", result);
     }
-    
+
+    @AfterEach
+    void afterEach() {
+        System.out.println(request + " -> " + result + "\n");
+    }
+
 }
