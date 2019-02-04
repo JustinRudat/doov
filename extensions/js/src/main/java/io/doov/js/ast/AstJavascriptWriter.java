@@ -24,7 +24,7 @@ public class AstJavascriptWriter {
     protected ValidationRule rule;
     private String output;
 
-    private boolean isNaryPredicate;
+    private boolean isNaryPredicate; // keep track if we are in a Nary predicate processing
     private int parenthesisCount; // keep a count of the parenthesis to close before the final 'if'
     private int anyAllNoneContains; // 0 : match_any | 1 : match_all | 2 : match_none | 3 : contains
     private int daysMonthsYears; // 0 : days | 1 : months | 2 : years
@@ -33,9 +33,8 @@ public class AstJavascriptWriter {
     private boolean isMatch;    // allow us to know if we are in a 'matches' operator
     private boolean useRegexp;  // allow us to know if we use a regular expression
     private boolean isTemporalPredicate;    // allow us to know if we are in a temporal operator
-    private boolean alreadyComputed;    // allow us to know if some value have already been processed (operateur
-    // temporel)
-    private boolean isFinished;
+    private boolean alreadyComputed;    // allow us to know if some value have already been processed
+    private boolean isFinished; // keep track if we finished processing the elements remaining (NaryMetadata)
     private boolean isDiff; // allow us to know if we are in the operator age_at
     private boolean isBeforeOrAfter;    // allow us to know if we are in the operator before, before_or_same, after, ...
     private static ArrayList<DefaultOperator> exceptionOperator;
@@ -62,6 +61,12 @@ public class AstJavascriptWriter {
         exceptionOperator.add(age_at_days);
         exceptionOperator.add(age_at_years);
         exceptionOperator.add(equals);
+        exceptionOperator.add(greater_or_equals);
+        exceptionOperator.add(greater_than);
+        exceptionOperator.add(lesser_than);
+        exceptionOperator.add(lesser_or_equals);
+        exceptionOperator.add(as_a_number);
+        exceptionOperator.add(as_string);
     }
 
     private void initValue() {
@@ -126,6 +131,7 @@ public class AstJavascriptWriter {
                         if (!matched) {
                             returnValue[0] += writeElement(elt, "");
                         }
+
                     });
                 }
                 break;
@@ -192,7 +198,7 @@ public class AstJavascriptWriter {
                     break;
                 case VALUE:
                 case STRING_VALUE:
-                    returnValue += writeValue(element, returnValue);
+                    returnValue = writeValue(element, returnValue);
                     break;
                 case PARENTHESIS_LEFT:
                     break;
@@ -215,18 +221,9 @@ public class AstJavascriptWriter {
         NaryMetadata naryMetadata = (NaryMetadata) metadata;
         DefaultOperator operator =
                 (DefaultOperator) naryMetadata.getOperator();
-        switch (operator) {
-            case min:
-                returnValue[0] += "Math.min.apply(null,[";
-                break;
-            case match_none:
-                returnValue[0] += "!";
-                break;
-            case count:
-            case sum:
-                returnValue[0] += "[";
-                break;
-        }
+
+        returnValue[0] = startNary(operator);
+
         if (naryMetadata.children().findAny().isPresent()) {
             naryMetadata.children().forEach(elt ->
             {
@@ -254,18 +251,35 @@ public class AstJavascriptWriter {
         } else {
             throw new RuntimeException("No children were found for the Nary-Metadata");
         }
+
+        returnValue[0] += endNary(operator);
+
+        return returnValue[0];
+    }
+
+    private String startNary(DefaultOperator operator) {
+        switch (operator) {
+            case min:
+                return "Math.min.apply(null,[";
+            case match_none:
+                return "!";
+            case count:
+            case sum:
+                return "[";
+        }
+        return "";
+    }
+
+    private String endNary(DefaultOperator operator) {
         switch (operator) {
             case count:
-                returnValue[0] += "].reduce(function(acc,val){ return val ? acc + 1 : acc},0)";
-                break;
+                return "].reduce(function(acc,val){ return val ? acc + 1 : acc},0)";
             case min:
-                returnValue[0] += "])";
-                break;
+                return "])";
             case sum:
-                returnValue[0] += "].reduce(function(acc,val){ return acc+val;},0)";
-                break;
+                return "].reduce(function(acc,val){ return acc+val;},0)";
         }
-        return returnValue[0];
+        return "";
     }
 
     private String writeBinary(Metadata metadata) {
@@ -285,6 +299,9 @@ public class AstJavascriptWriter {
     }
 
     private String writeOperator(Element element, String returnValue) {
+        if (isFinished) {
+            return "";
+        }
         DefaultOperator operator = (DefaultOperator) element.getReadable();
         List<Element> flatList;
         String numValue;
@@ -345,14 +362,12 @@ public class AstJavascriptWriter {
                         for (int i = indexElement + 2; i < flatList.size(); i++) {
                             subFlatList.add(flatList.get(i));
                         }
-
                         subFlatList.forEach(elt -> subListString[0] = writeElement(elt, subListString[0]));
                         subListString[0] = writeForDiff(subListString[0]);
                         isFinished = true;
                     } else {
                         isNaryPredicate = false;
                     }
-
                     return returnValue + subListString[0];
                 }
             case not_equals:
@@ -572,6 +587,7 @@ public class AstJavascriptWriter {
                 tmpTodayValue = "Math.round(Math.abs(" + tmpTodayValue + ",\'days\')))";
             }
             daysMonthsYears = -1;
+            isDiff = false;
         }
         return tmpTodayValue;
     }
@@ -634,16 +650,8 @@ public class AstJavascriptWriter {
                         isTemporalPredicate = false;
                         if (element.getReadable().toString().contains("DateField")) {
                             returnValue = returnValue + "moment(" + element.toString() + ")";
-                            if (isDiff) {
-                                isDiff = false;
-                                returnValue += ",\'years\')))";
-                            }
                         } else {
                             returnValue = returnValue + "moment(\'" + element.toString() + "\')";
-                            if (isDiff) {
-                                isDiff = false;
-                                returnValue += ",\'years\')))";
-                            }
                         }
                     } else {
                         returnValue = returnValue + element.toString();
