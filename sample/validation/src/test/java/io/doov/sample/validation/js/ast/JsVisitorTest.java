@@ -27,7 +27,7 @@ public class JsVisitorTest {
     }
 
     @Test
-    public void print_javascript_syntax_tree() throws ScriptException {
+    public void print_javascript_syntax_tree() {
         ByteArrayOutputStream ops = new ByteArrayOutputStream();
         REGISTRY_DEFAULT.stream()
                 .peek(rule -> {
