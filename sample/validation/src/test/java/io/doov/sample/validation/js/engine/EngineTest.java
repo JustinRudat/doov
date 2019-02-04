@@ -14,6 +14,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import io.doov.js.ast.AstJavascriptWriter;
+import io.doov.js.ast.ScriptEngineFactory;
 import io.doov.sample.validation.SampleRules;
 
 public class EngineTest {
@@ -26,12 +27,7 @@ public class EngineTest {
     @Test
     public void exec_javascript_syntax_tree() {
 
-        String mockValue = "var configuration = { max:{email:{size:24}}, min:{age:18}};\n"
-                + "\tvar account = {email:\"potato@tomato.fr\", "
-                + "creation: {date : \"2012-10-10\"}, country:\"FR\", company:\"LESFURETS.COM\","
-                + " phone:{number:\"+334567890120\"}, timezone:\"2014-06-01T12:00:00-04:00\"};\n"
-                + "\tvar user = {id:\"notnull\", birthdate:\"1980\","
-                + "first:{name:\"french\"}, last:{name:\"FRIES\"} };\n";  // creation of the mock values
+        String mockValue = ScriptEngineFactory.evalTestData();
 
         System.out.println("Evaluation of the rules :");
         System.out.println("    Mock value : ");
@@ -41,10 +37,10 @@ public class EngineTest {
         try {
             engine.eval(mockValue); // evaluating the mock values for testing purpose
         } catch (ScriptException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
         ByteArrayOutputStream ops = new ByteArrayOutputStream();
-
+        AstJavascriptWriter writer = new AstJavascriptWriter(ops);
         final int[] index = new int[1];                                 // index as a tab, usage in lambda expression
         final int[] counter = new int[1];
         index[0] = 0;
@@ -54,7 +50,7 @@ public class EngineTest {
             try {
                 index[0]++;
                 System.out.println("--------------------------------\n");
-                new AstJavascriptWriter(ops).writeRule(rule);
+                writer.writeRule(rule);
                 String request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
                 try {
                     if (index[0] != 14) {                                // excluding some rules for now (lambda
@@ -77,7 +73,7 @@ public class EngineTest {
                 }
                 System.out.println(new String(ops.toByteArray(), Charset.forName("UTF-8")));
             } catch (IOException e) {
-                e.printStackTrace();
+                throw new RuntimeException(e);
             }
         });
         System.out.println("Passing " + counter[0] + " out of " + index[0] + " tests with true value.");

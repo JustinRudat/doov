@@ -63,13 +63,12 @@ public class ScriptEngineFactory {
     }
 
     public static String evalTestData(){
-        String testData = "var account = { company : 'BLABLACAR', email : 'test@lesfurets.com', country: 'FR'," +
-                " phone:{ number: '+33123456789'}, creation: { date: '2009-01-01'}, timezone: '00:00:01' };\n" +
-                "var BLABLACAR = 'BLABLACAR';\n" +
-                "var FR = 'FR';\n" +
-                "var user = { birthdate: 1980, first: { name: 'test' }, last: { name: 'TEST' } };\n" +
-                "var configuration = { max: { email: { size: 24 } }, min: { age: 18} };\n" +
-                "var favorite = { site: { name: { 1: 'test.com'} } }";
+        String testData = "var account = { company : 'LESFURETS.COM', email : 'test@lesfurets.com', country: 'FR'," +
+                " phone:{ number: '+33123456789'},\n\t creation: { date: '2009-01-01'}, timezone: '00:00:01' };\n" +
+                "\tvar FR = 'FR';\n" +
+                "\tvar user = { birthdate: 1980, first: { name: 'test' }, last: { name: 'TEST' } };\n" +
+                "\tvar configuration = { max: { email: { size: 24 } }, min: { age: 18} };\n" +
+                "\tvar favorite = { site: { name: { 1: 'test.com'} } }";
         return testData;
     }
 }
