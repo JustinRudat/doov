@@ -58,7 +58,6 @@ public class TemporalFunctionJavascriptTest {
     void eval_with() throws ScriptException {
         rule = when(A.with(firstDayOfYear()).eq(LocalDate.of(1, 1, 1))).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -68,7 +67,6 @@ public class TemporalFunctionJavascriptTest {
     void eval_minus_value() throws ScriptException {
         rule = when(A.minus(1, ChronoUnit.DAYS).eq(LocalDate.of(1, 1, 1))).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -78,7 +76,6 @@ public class TemporalFunctionJavascriptTest {
     void eval_minus_field() throws ScriptException {
         rule = when(A.minus(B, ChronoUnit.DAYS).eq(LocalDate.of(1, 1, 1))).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -88,7 +85,6 @@ public class TemporalFunctionJavascriptTest {
     void eval_plus_value() throws ScriptException {
         rule = when(A.plus(1, ChronoUnit.DAYS).eq(LocalDate.of(1, 1, 1))).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -98,7 +94,6 @@ public class TemporalFunctionJavascriptTest {
     void eval_plus_field() throws ScriptException {
         rule = when(A.plus(B, ChronoUnit.DAYS).eq(LocalDate.of(1, 1, 1))).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -108,7 +103,6 @@ public class TemporalFunctionJavascriptTest {
     void eval_between_days() throws ScriptException {
         rule = when(today().plus(B, ChronoUnit.DAYS).daysBetween(today()).eq(1)).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -118,7 +112,6 @@ public class TemporalFunctionJavascriptTest {
     void eval_between_months() throws ScriptException {
         rule = when(today().plus(B, ChronoUnit.MONTHS).monthsBetween(today()).eq(1)).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -128,7 +121,6 @@ public class TemporalFunctionJavascriptTest {
     void eval_between_years() throws ScriptException {
         rule = when(today().plus(B, ChronoUnit.YEARS).yearsBetween(today()).eq(1)).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);

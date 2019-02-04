@@ -66,7 +66,6 @@ public class ComplexConditionJavascriptTest {
     void eval_email_valid() throws ScriptException {
         rule = when(validEmail.matches("\\w+[@]\\w+\\.com").or(validEmail.matches("\\w+[@]\\w+\\.fr"))).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -76,7 +75,6 @@ public class ComplexConditionJavascriptTest {
     void eval_email_invalid() throws ScriptException {
         rule = when(invalidEmail.matches("\\w+[@]\\w+\\.com").or(invalidEmail.matches("\\w+[@]\\w+\\.fr"))).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -88,7 +86,6 @@ public class ComplexConditionJavascriptTest {
                 validEmail.length().lesserOrEquals(configMaxEmailSize),
                 accountCountry.eq("FR").and(accountPhoneNumber.startsWith("+33")))).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -98,7 +95,6 @@ public class ComplexConditionJavascriptTest {
     void eval_times_chaining() throws ScriptException {
         rule = when(timesBase.times(2).times(2).times(2).eq(24)).validate().withShortCircuit(false);
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -112,7 +108,6 @@ public class ComplexConditionJavascriptTest {
                 .yearsBetween(today().plus(12, MONTHS).plus(1, YEARS))
                 .eq(0)).validate().withShortCircuit(false);
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -125,7 +120,6 @@ public class ComplexConditionJavascriptTest {
                 .yearsBetween(userBirthdate.plus(12, MONTHS).plus(1, YEARS))
                 .eq(0)).validate().withShortCircuit(false);
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -137,7 +131,6 @@ public class ComplexConditionJavascriptTest {
         rule = when(today().plus(2, YEARS).minus(12, MONTHS).minus(1, YEARS)
                 .eq(today())).validate().withShortCircuit(false);
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -148,7 +141,6 @@ public class ComplexConditionJavascriptTest {
     void eval_cdo_value_false() throws ScriptException {
         rule = when(userBirthdate.yearsBetween(today()).eq(38)).validate().withShortCircuit(false);
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("false", result);
@@ -159,7 +151,6 @@ public class ComplexConditionJavascriptTest {
     void eval_cdo_value_true() throws ScriptException {
         rule = when(userBirthdate.yearsBetween(today()).eq(39)).validate().withShortCircuit(false);
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -169,7 +160,6 @@ public class ComplexConditionJavascriptTest {
     void eval_cdo_field_true() throws ScriptException {
         rule = when(userBirthdate.yearsBetween(today()).eq(ageat)).validate().withShortCircuit(false);
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -180,7 +170,6 @@ public class ComplexConditionJavascriptTest {
     void eval_daysBetween_eq() throws ScriptException {
         rule = when(today().daysBetween(firstDayOfThisYear()).eq(firstDayOfThisYear().daysBetween(today()))).validate().withShortCircuit(false);
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -190,7 +179,6 @@ public class ComplexConditionJavascriptTest {
     void eval_monthsBetween_eq() throws ScriptException {
         rule = when(today().monthsBetween(firstDayOfThisYear()).eq(firstDayOfThisYear().monthsBetween(today()))).validate().withShortCircuit(false);
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -200,7 +188,6 @@ public class ComplexConditionJavascriptTest {
     void eval_yearsBetween_eq() throws ScriptException {
         rule = when(today().yearsBetween(firstDayOfThisYear()).eq(0)).validate().withShortCircuit(false);
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -212,7 +199,6 @@ public class ComplexConditionJavascriptTest {
                 userLastName.isNotNull().and(userLastName.matches("[A-Z]+")))
                 .greaterOrEquals(0)).validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
@@ -225,7 +211,6 @@ public class ComplexConditionJavascriptTest {
                 .and(today().plus(2, YEARS).minus(12, MONTHS).minus(1, YEARS).eq(today())))
                 .validate();
         writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
         result = engine.eval(request).toString();
         assertEquals("true", result);
