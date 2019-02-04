@@ -1,32 +1,29 @@
 package io.doov.sample.validation.js.engine;
 
-import io.doov.js.ast.AstJavascriptVisitor;
-import io.doov.sample.validation.SampleRules;
-
-import javax.script.ScriptEngine;
-import javax.script.ScriptException;
-
-import org.junit.jupiter.api.*;
+import static io.doov.core.dsl.impl.DefaultRuleRegistry.REGISTRY_DEFAULT;
+import static io.doov.js.ast.ScriptEngineFactory.create;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.Locale;
+import javax.script.ScriptEngine;
+import javax.script.ScriptException;
 
-import static io.doov.core.dsl.impl.DefaultRuleRegistry.REGISTRY_DEFAULT;
-import static io.doov.core.dsl.meta.i18n.ResourceBundleProvider.BUNDLE;
-import static io.doov.js.ast.ScriptEngineFactory.create;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import io.doov.js.ast.AstJavascriptWriter;
+import io.doov.sample.validation.SampleRules;
 
 public class EngineTest {
+
     @BeforeAll
     public static void init() {
         new SampleRules();
     }
 
     @Test
-    @Disabled
-    // FIXME upgrade test since leafmetadata refactoring 
     public void exec_javascript_syntax_tree() {
 
         String mockValue = "var configuration = { max:{email:{size:24}}, min:{age:18}};\n"
@@ -57,10 +54,11 @@ public class EngineTest {
             try {
                 index[0]++;
                 System.out.println("--------------------------------\n");
-                new AstJavascriptVisitor(ops, BUNDLE, Locale.ENGLISH).browse(rule.metadata(), 0);
+                new AstJavascriptWriter(ops).writeRule(rule);
                 String request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
                 try {
-                    if (index[0] != 14) {                                // excluding some rules for now (lambda expression)
+                    if (index[0] != 14) {                                // excluding some rules for now (lambda
+                        // expression)
                         Object obj = engine.eval(request);              // evaluating the current rule to test
                         ops.write(("\n Rules n°" + index[0]).getBytes(StandardCharsets.UTF_8));
                         ops.write(("\n    Starting engine checking of : " + rule.readable() + "\n")

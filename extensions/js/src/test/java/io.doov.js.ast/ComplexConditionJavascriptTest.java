@@ -1,5 +1,7 @@
 package io.doov.js.ast;
 
+import static io.doov.core.dsl.DOOV.count;
+import static io.doov.core.dsl.DOOV.matchAll;
 import static io.doov.core.dsl.DOOV.when;
 import static io.doov.core.dsl.meta.i18n.ResourceBundleProvider.BUNDLE;
 import static io.doov.core.dsl.time.LocalDateSuppliers.firstDayOfThisYear;
@@ -28,15 +30,17 @@ public class ComplexConditionJavascriptTest {
     private ValidationRule rule;
     private static GenericModel model = new GenericModel();
     private static StringFieldInfo A = model.stringField("value", "A"),
-            B = model.stringField(null, "B"),
-            C = model.stringField("value", "C"),
-            D = model.stringField("", "D");
-    private LocalDateFieldInfo userbd = model.localDateField(LocalDate.of(1980, 1, 1), "userbd");
-    ;
-    private IntegerFieldInfo configMaxEmailSize = model.intField(3, "maxsize"),
-            ageat = model.intField(39, "ageat");
+            validEmail = model.stringField("test@test.fr", "validAccountEmail"),
+            invalidEmail = model.stringField("test@test.uk", "invalidAccountEmail"),
+            accountCountry = model.stringField("FR", "accountCountry"),
+            userFirstName = model.stringField("test", "userFirstName"),
+            userLastName = model.stringField("TEST", "userLastName"),
+            accountPhoneNumber = model.stringField("+33123456789", "accountPhoneNumber");
+    private LocalDateFieldInfo userBirthdate = model.localDateField(LocalDate.of(1980, 1, 1), "userbd");
+    private IntegerFieldInfo configMaxEmailSize = model.intField(24, "maxsize"),
+            ageat = model.intField(39, "ageat"),
+            timesBase = model.intField(3, "timesbase");
     private String request, result;
-
     private static ByteArrayOutputStream ops;
     private static ResourceBundleProvider bundle;
     private static ScriptEngine engine;
@@ -59,8 +63,40 @@ public class ComplexConditionJavascriptTest {
     }
 
     @Test
+    void eval_email_valid() throws ScriptException {
+        rule = when(validEmail.matches("\\w+[@]\\w+\\.com").or(validEmail.matches("\\w+[@]\\w+\\.fr"))).validate();
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
+        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
+        result = engine.eval(request).toString();
+        assertEquals("true", result);
+    }
+
+    @Test
+    void eval_email_invalid() throws ScriptException {
+        rule = when(invalidEmail.matches("\\w+[@]\\w+\\.com").or(invalidEmail.matches("\\w+[@]\\w+\\.fr"))).validate();
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
+        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
+        result = engine.eval(request).toString();
+        assertEquals("false", result);
+    }
+
+    @Test
+    void eval_account_rule() throws ScriptException {
+        rule = when(matchAll(userBirthdate.ageAt(today()).greaterOrEquals(18),
+                validEmail.length().lesserOrEquals(configMaxEmailSize),
+                accountCountry.eq("FR").and(accountPhoneNumber.startsWith("+33")))).validate();
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
+        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
+        result = engine.eval(request).toString();
+        assertEquals("true", result);
+    }
+
+    @Test
     void eval_times_chaining() throws ScriptException {
-        rule = when(configMaxEmailSize.times(2).times(2).times(2).eq(24)).validate().withShortCircuit(false);
+        rule = when(timesBase.times(2).times(2).times(2).eq(24)).validate().withShortCircuit(false);
         writer.writeRule(rule);
         //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
@@ -85,8 +121,8 @@ public class ComplexConditionJavascriptTest {
 
     @Test
     void eval_cdo_birthdateEq() throws ScriptException {
-        rule = when(userbd.plus(2, YEARS)
-                .yearsBetween(userbd.plus(12, MONTHS).plus(1, YEARS))
+        rule = when(userBirthdate.plus(2, YEARS)
+                .yearsBetween(userBirthdate.plus(12, MONTHS).plus(1, YEARS))
                 .eq(0)).validate().withShortCircuit(false);
         writer.writeRule(rule);
         //visitor.browse(rule.metadata(),0);
@@ -110,7 +146,7 @@ public class ComplexConditionJavascriptTest {
 
     @Test
     void eval_cdo_value_false() throws ScriptException {
-        rule = when(userbd.yearsBetween(today()).eq(38)).validate().withShortCircuit(false);
+        rule = when(userBirthdate.yearsBetween(today()).eq(38)).validate().withShortCircuit(false);
         writer.writeRule(rule);
         //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
@@ -121,7 +157,17 @@ public class ComplexConditionJavascriptTest {
     // eq operator can't accept numerical fonction as parameter
     @Test
     void eval_cdo_value_true() throws ScriptException {
-        rule = when(userbd.yearsBetween(today()).eq(39)).validate().withShortCircuit(false);
+        rule = when(userBirthdate.yearsBetween(today()).eq(39)).validate().withShortCircuit(false);
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
+        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
+        result = engine.eval(request).toString();
+        assertEquals("true", result);
+    }
+
+    @Test
+    void eval_cdo_field_true() throws ScriptException {
+        rule = when(userBirthdate.yearsBetween(today()).eq(ageat)).validate().withShortCircuit(false);
         writer.writeRule(rule);
         //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
@@ -140,7 +186,6 @@ public class ComplexConditionJavascriptTest {
         assertEquals("true", result);
     }
 
-    //@Disabled("no distinction between days, month and year. age_at -> yearBetween by default")
     @Test
     void eval_monthsBetween_eq() throws ScriptException {
         rule = when(today().monthsBetween(firstDayOfThisYear()).eq(firstDayOfThisYear().monthsBetween(today()))).validate().withShortCircuit(false);
@@ -154,6 +199,18 @@ public class ComplexConditionJavascriptTest {
     @Test
     void eval_yearsBetween_eq() throws ScriptException {
         rule = when(today().yearsBetween(firstDayOfThisYear()).eq(0)).validate().withShortCircuit(false);
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
+        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
+        result = engine.eval(request).toString();
+        assertEquals("true", result);
+    }
+
+    @Test
+    void eval_user_names() throws ScriptException {
+        rule = when(count(userFirstName.isNotNull(),
+                userLastName.isNotNull().and(userLastName.matches("[A-Z]+")))
+                .greaterOrEquals(0)).validate();
         writer.writeRule(rule);
         //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
