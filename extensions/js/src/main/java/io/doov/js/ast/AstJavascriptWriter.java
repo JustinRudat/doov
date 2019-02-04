@@ -591,6 +591,7 @@ public class AstJavascriptWriter {
             }
             daysMonthsYears = -1;
             isDiff = false;
+            isTemporalPredicate = false;
         }
         return tmpTodayValue;
     }
@@ -657,7 +658,13 @@ public class AstJavascriptWriter {
                             returnValue = returnValue + "moment(\'" + element.toString() + "\')";
                         }
                     } else {
-                        returnValue = returnValue + element.toString();
+                        if (element.getReadable().toString().contains("Field")
+                                || element.toString().equals("false") || element.toString().equals("true")) {
+                            //eval_and_value and eval_or_value
+                            returnValue = returnValue + element.toString();
+                        } else {
+                            returnValue = returnValue + "\'" + element.toString() + "\'";
+                        }
                     }
                 }
             }
