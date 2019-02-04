@@ -201,10 +201,13 @@ public class AstJavascriptWriter {
                     returnValue = writeValue(element, returnValue);
                     break;
                 case PARENTHESIS_LEFT:
+                    returnValue += "/*PARENTHESIS_LEFT*/";
                     break;
                 case PARENTHESIS_RIGHT:
+                    returnValue += "/*PARENTHESIS_RIGHT*/";
                     break;
                 case TEMPORAL_UNIT:
+                    // already managed in add/subtract operator processing
                     break;
                 case UNKNOWN:
                     returnValue += "/*UNKNOWN*/";

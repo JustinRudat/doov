@@ -23,8 +23,7 @@ public class IterableConditionJavascriptTest {
 
     private ValidationRule rule;
     private static GenericModel model = new GenericModel();
-    private static IterableFieldInfo<String, Iterable<String>> A = model.iterableField(asList("a", "aa"), "A"),
-            B = model.iterableField(null, "B");
+    private static IterableFieldInfo<String, Iterable<String>> A = model.iterableField(asList("a", "aa"), "A");
     private String request, result = "";
     private static ByteArrayOutputStream ops;
     private static ResourceBundleProvider bundle;
@@ -80,6 +79,16 @@ public class IterableConditionJavascriptTest {
     @Test
     void eval_containsAll_true() throws ScriptException {
         rule = when(A.containsAll("a", "aa")).validate();
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
+        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
+        result = engine.eval(request).toString();
+        assertEquals("true", result);
+    }
+
+    @Test
+    void eval_isNotEmpty_true() throws ScriptException {
+        rule = when(A.isNotEmpty()).validate();
         writer.writeRule(rule);
         //visitor.browse(rule.metadata(),0);
         request = new String(ops.toByteArray(), Charset.forName("UTF-8"));

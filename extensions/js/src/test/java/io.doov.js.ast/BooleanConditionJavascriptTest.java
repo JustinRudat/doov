@@ -78,7 +78,17 @@ public class BooleanConditionJavascriptTest {
     }
 
     @Test
-    void eval_andValue() throws ScriptException {
+    void eval_and_field() throws ScriptException {
+        rule = when(A.and(B)).validate();
+        writer.writeRule(rule);
+        //visitor.browse(rule.metadata(),0);
+        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
+        result = engine.eval(request).toString();
+        assertEquals("false", result);
+    }
+
+    @Test
+    void eval_and_value() throws ScriptException {
         rule = when(A.and(false)).validate();
         writer.writeRule(rule);
         //visitor.browse(rule.metadata(),0);
@@ -128,17 +138,7 @@ public class BooleanConditionJavascriptTest {
     }
 
     @Test
-    void eval_andField() throws ScriptException {
-        rule = when(A.and(B)).validate();
-        writer.writeRule(rule);
-        //visitor.browse(rule.metadata(),0);
-        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
-        result = engine.eval(request).toString();
-        assertEquals("false", result);
-    }
-
-    @Test
-    void eval_orValue() throws ScriptException {
+    void eval_or_value() throws ScriptException {
         rule = when(B.or(false)).validate();
         writer.writeRule(rule);
         //visitor.browse(rule.metadata(),0);
@@ -148,7 +148,7 @@ public class BooleanConditionJavascriptTest {
     }
 
     @Test
-    void eval_orField() throws ScriptException {
+    void eval_or_field() throws ScriptException {
         rule = when(B.or(C)).validate();
         writer.writeRule(rule);
         //visitor.browse(rule.metadata(),0);
