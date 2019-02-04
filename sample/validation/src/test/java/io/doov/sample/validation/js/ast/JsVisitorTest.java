@@ -29,10 +29,11 @@ public class JsVisitorTest {
     @Test
     public void print_javascript_syntax_tree() {
         ByteArrayOutputStream ops = new ByteArrayOutputStream();
+        AstJavascriptWriter writer = new AstJavascriptWriter(ops);
         REGISTRY_DEFAULT.stream()
                 .peek(rule -> {
                     try {
-                        ops.write("--------------------------------\n".getBytes());
+                        ops.write("--------------------------------".getBytes());
                         System.out.println(new String(ops.toByteArray(), Charset.forName("UTF-8")));
                         ops.reset();
                     } catch (IOException e) {
@@ -40,14 +41,10 @@ public class JsVisitorTest {
                     }
                 })
                 .forEach(rule -> {
-                    try {
-                        new AstJavascriptWriter(ops).writeRule(rule);
-                        System.out.println(new String(ops.toByteArray(), Charset.forName("UTF-8")));
-                        System.out.println(engine.eval(ops.toString()).toString());
-                        ops.reset();
-                    } catch (ScriptException e) {
-                        e.printStackTrace();
-                    }
+                    writer.writeRule(rule);
+                    System.out.println(new String(ops.toByteArray(), Charset.forName("UTF-8")));
+                    ops.reset();
+
                 });
     }
 
