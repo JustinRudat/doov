@@ -85,41 +85,41 @@ public class BooleanConditionJavascriptTest {
         assertEquals("false", result);
     }
 
-    @Test
-    void eval_XOR_value_true() throws ScriptException {
-        rule = when(A.xor(false)).validate();
-        writer.writeRule(rule);
-        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
-        result = engine.eval(request).toString();
-        assertEquals("true", result);
-    }
-
-    @Test
-    void eval_XOR_field_true() throws ScriptException {
-        rule = when(A.xor(B)).validate();
-        writer.writeRule(rule);
-        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
-        result = engine.eval(request).toString();
-        assertEquals("true", result);
-    }
-
-    @Test
-    void eval_XOR_value_false() throws ScriptException {
-        rule = when(A.xor(true)).validate();
-        writer.writeRule(rule);
-        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
-        result = engine.eval(request).toString();
-        assertEquals("false", result);
-    }
-
-    @Test
-    void eval_XOR_field_false() throws ScriptException {
-        rule = when(C.xor(B)).validate();
-        writer.writeRule(rule);
-        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
-        result = engine.eval(request).toString();
-        assertEquals("false", result);
-    }
+    //    @Test
+    //    void eval_XOR_value_true() throws ScriptException {
+    //        rule = when(A.xor(false)).validate();
+    //        writer.writeRule(rule);
+    //        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
+    //        result = engine.eval(request).toString();
+    //        assertEquals("true", result);
+    //    }
+    //
+    //    @Test
+    //    void eval_XOR_field_true() throws ScriptException {
+    //        rule = when(A.xor(B)).validate();
+    //        writer.writeRule(rule);
+    //        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
+    //        result = engine.eval(request).toString();
+    //        assertEquals("true", result);
+    //    }
+    //
+    //    @Test
+    //    void eval_XOR_value_false() throws ScriptException {
+    //        rule = when(A.xor(true)).validate();
+    //        writer.writeRule(rule);
+    //        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
+    //        result = engine.eval(request).toString();
+    //        assertEquals("false", result);
+    //    }
+    //
+    //    @Test
+    //    void eval_XOR_field_false() throws ScriptException {
+    //        rule = when(C.xor(B)).validate();
+    //        writer.writeRule(rule);
+    //        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
+    //        result = engine.eval(request).toString();
+    //        assertEquals("false", result);
+    //    }
 
     @Test
     void eval_or_value() throws ScriptException {

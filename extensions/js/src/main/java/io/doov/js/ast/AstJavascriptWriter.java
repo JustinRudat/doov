@@ -11,7 +11,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Deque;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -24,10 +24,8 @@ public class AstJavascriptWriter {
     protected ValidationRule rule;
     private String output;
 
-    private boolean isNaryPredicate; // keep track if we are in a Nary predicate processing
     private int parenthesisCount; // keep a count of the parenthesis to close before the final 'if'
     private int anyAllNoneContains; // 0 : match_any | 1 : match_all | 2 : match_none | 3 : contains
-    private int daysMonthsYears; // 0 : days | 1 : months | 2 : years
     private boolean isStartsWith;  // allow us to know if we are in the operator starts_with
     private boolean isEndsWith; // allow us to know if we are in the operator ends_with
     private boolean isMatch;    // allow us to know if we are in a 'matches' operator
@@ -36,7 +34,6 @@ public class AstJavascriptWriter {
     private boolean alreadyComputed;    // allow us to know if some value have already been processed
     private boolean isFinished; // keep track if we finished processing the elements remaining (NaryMetadata)
     private boolean isDiff; // allow us to know if we are in the operator age_at
-    private boolean isBeforeOrAfter;    // allow us to know if we are in the operator before, before_or_same, after, ...
     private static ArrayList<DefaultOperator> exceptionOperator;
 
     public AstJavascriptWriter(OutputStream ops) {
@@ -57,8 +54,8 @@ public class AstJavascriptWriter {
         exceptionOperator.add(after_or_equals);
         exceptionOperator.add(before);
         exceptionOperator.add(before_or_equals);
-        exceptionOperator.add(age_at_months);
         exceptionOperator.add(age_at_days);
+        exceptionOperator.add(age_at_months);
         exceptionOperator.add(age_at_years);
         exceptionOperator.add(equals);
         exceptionOperator.add(greater_or_equals);
@@ -72,17 +69,14 @@ public class AstJavascriptWriter {
     private void initValue() {
         this.parenthesisCount = 0;
         this.anyAllNoneContains = -1;
-        this.daysMonthsYears = -1;
         this.isMatch = false;
         this.isEndsWith = false;
         this.isStartsWith = false;
         this.useRegexp = false;
         this.isTemporalPredicate = false;
         this.alreadyComputed = false;
-        this.isBeforeOrAfter = false;
         this.isDiff = false;
         this.isFinished = false;
-        this.isNaryPredicate = false;
     }
 
     public void writeRule(ValidationRule rule) {
@@ -104,49 +98,64 @@ public class AstJavascriptWriter {
     }
 
     private String writeMetadata(Metadata metadata) {
+        if (alreadyComputed) {
+            alreadyComputed = false;
+            return "";
+        }
         String[] returnValue = new String[1];
         returnValue[0] = "";
         switch (metadata.type()) {
+            case RULE:
+                break;
+            case WHEN:
+                break;
+            case LEAF_VALUE:
+                ((LeafMetadata) metadata).elementsAsList().forEach(elt ->
+                        returnValue[0] += writeElement((Element) elt, returnValue[0], metadata));
+                break;
             case BINARY_PREDICATE:
                 returnValue[0] += writeBinary(metadata);
                 break;
             case LEAF_PREDICATE: // Same processing as FIELD_PREDICATE
             case FIELD_PREDICATE:
-                if (metadata.flatten().size() == 2 && metadata.flatten().get(1).getReadable() == not) {
+                LeafMetadata metaLeaf = (LeafMetadata) metadata;
+                if (metaLeaf.elementsAsList().size() == 2 && metaLeaf.elementsAsList().get(1) == not) {
                     // test eval_not_false/true out of a leaf metadata
-                    returnValue[0] += "!(" + writeElement(metadata.flatten().get(0), "") + ")";
-                } else if (metadata.flatten().size() == 3 && metadata.flatten().get(1).getReadable() == xor) {
+                    returnValue[0] += "!(" + writeElement((Element) metaLeaf.elementsAsList().get(0), "", metaLeaf) + ")";
+                } else if (metaLeaf.elementsAsList().size() == 3 && ((Element) metaLeaf.elementsAsList().get(1)).getReadable() == xor) {
                     // test eval_XOR_* special case
-                    returnValue[0] += writeXOR(metadata.flatten().get(0), metadata.flatten().get(2));
+                    returnValue[0] += writeXOR(((Element) metaLeaf.elementsAsList().get(0)),
+                            ((Element) metaLeaf.elementsAsList().get(2)));
                 } else {
-                    metadata.flatten().forEach(elt -> {
+                    metaLeaf.elementsAsList().forEach(elt -> {
                         boolean matched = false;
-                        if (elt.getType() == OPERATOR) {
-                            DefaultOperator operator = (DefaultOperator) elt.getReadable();
+                        if (((Element) elt).getType() == OPERATOR) {
+                            DefaultOperator operator = (DefaultOperator) ((Element) elt).getReadable();
                             if (exceptionOperator.contains(operator)) {
-                                returnValue[0] = writeElement(elt, returnValue[0]);
+                                returnValue[0] = writeElement((Element) elt, returnValue[0], metaLeaf);
                                 matched = true;
                             }
                         }
                         if (!matched) {
-                            returnValue[0] += writeElement(elt, "");
+                            returnValue[0] += writeElement(((Element) elt), "", metaLeaf);
                         }
 
                     });
                 }
                 break;
             case FIELD_PREDICATE_MATCH_ANY:
-                metadata.flatten().forEach(elt -> {
+                LeafMetadata metaLeafTmp = ((LeafMetadata) metadata);
+                metaLeafTmp.elementsAsList().forEach(elt -> {
                     boolean matched = false;
-                    if (elt.getType() == OPERATOR) {
-                        DefaultOperator operator = (DefaultOperator) elt.getReadable();
+                    if (((Element) elt).getType() == OPERATOR) {
+                        DefaultOperator operator = (DefaultOperator) ((Element) elt).getReadable();
                         if (operator == match_none || operator == match_all || operator == match_any) {
-                            returnValue[0] = writeElement(elt, returnValue[0]);
+                            returnValue[0] = writeElement(((Element) elt), returnValue[0], metaLeafTmp);
                             matched = true;
                         }
                     }
                     if (!matched) {
-                        returnValue[0] += writeElement(elt, "");
+                        returnValue[0] += writeElement(((Element) elt), "", metaLeafTmp);
                     }
                 });
                 break;
@@ -183,22 +192,26 @@ public class AstJavascriptWriter {
             case TYPE_CONVERTER_IDENTITY:
                 returnValue[0] += "/*TYPE_CONVERTER_IDENTITY*/";
                 break;
+
+            default:
+                break;
         }
         return returnValue[0];
     }
 
-    private String writeElement(Element element, String returnValue) {
+    private String writeElement(Element element, String returnValue, Metadata metadata) {
         if (!isFinished) {
             switch (element.getType()) {
                 case FIELD:
                     returnValue = writeField(element, returnValue);
                     break;
                 case OPERATOR:
-                    returnValue = writeOperator(element, returnValue);
+                    returnValue = writeOperator((DefaultOperator) element.getReadable(), returnValue, metadata);
                     break;
                 case VALUE:
                 case STRING_VALUE:
-                    returnValue = writeValue(element, returnValue);
+                    returnValue = writeValue(element, returnValue, metadata);
+                    isMatch = false;
                     break;
                 case PARENTHESIS_LEFT:
                     returnValue += "/*PARENTHESIS_LEFT*/";
@@ -207,7 +220,7 @@ public class AstJavascriptWriter {
                     returnValue += "/*PARENTHESIS_RIGHT*/";
                     break;
                 case TEMPORAL_UNIT:
-                    // already managed in add/subtract operator processing
+                    returnValue += "\'" + element.toString() + "\'";
                     break;
                 case UNKNOWN:
                     returnValue += "/*UNKNOWN*/";
@@ -219,7 +232,6 @@ public class AstJavascriptWriter {
 
     private String writeNary(Metadata metadata) {
         String[] returnValue = new String[1];
-        isNaryPredicate = true;
         returnValue[0] = "";
         NaryMetadata naryMetadata = (NaryMetadata) metadata;
         DefaultOperator operator =
@@ -288,308 +300,340 @@ public class AstJavascriptWriter {
     private String writeBinary(Metadata metadata) {
         String returnValue = "";
         BinaryMetadata binaryMetadata = (BinaryMetadata) metadata;
-        Element operator = metadata.flatten().get(binaryMetadata.getLeft().flatten().size());
-        returnValue += "(";
-        if (operator.getReadable() == xor) {
+        DefaultOperator operator = (DefaultOperator) metadata.getOperator();
+        if (operator == xor) {
             returnValue += writeXOR(binaryMetadata.getLeft(), binaryMetadata.getRight());
         } else {
             returnValue += writeMetadata(binaryMetadata.getLeft());
-            returnValue += writeOperator(operator, "");
+            returnValue = writeOperator(operator, returnValue, binaryMetadata);
             returnValue += writeMetadata(binaryMetadata.getRight());
         }
-        returnValue += ")";
         return returnValue;
     }
 
-    private String writeOperator(Element element, String returnValue) {
+    private String writeOperator(DefaultOperator element, String returnValue, Metadata metadata) {
         if (isFinished) {
             return "";
         }
-        DefaultOperator operator = (DefaultOperator) element.getReadable();
-        List<Element> flatList;
-        String numValue;
-        String tempValue;
+        Deque<Element> deque;
         String tmpTodayValue;
-        switch (operator) {
+        String[] returnValueTab = new String[1];
+        returnValueTab[0] = returnValue;
+        switch (element) {
+            case no_operator:
+                break;
+            case rule:
+                break;
+            case validate:
+                break;
+            case empty:
+                break;
             case and:
-                returnValue += " && ";
+                returnValueTab[0] += " && ";
                 break;
             case or:
-                returnValue += " || ";
+                returnValueTab[0] += " || ";
                 break;
             case match_any:
                 anyAllNoneContains = 0;
                 isMatch = true;
-                return isSiblingIterable(element, true) ? returnValue + ".some(function(element){ return "
-                        : "[" + returnValue + "].some(function(element){ return ";
+                return isIterableOrField(metadata.left().findFirst().get()) ? returnValueTab[0] + ".some(function" +
+                        "(element){ " +
+                        "return "
+                        : "[" + returnValueTab[0] + "].some(function(element){ return ";
             case match_all:
                 anyAllNoneContains = 1;
                 isMatch = true;
-                return isSiblingIterable(element, true) ? returnValue + ".every(function(element){ return "
-                        : "[" + returnValue + "].every(function(element){ return ";
+                return isIterableOrField(metadata.left().findFirst().get()) ? returnValueTab[0] + ".every(function" +
+                        "(element){" +
+                        " return "
+                        : "[" + returnValueTab[0] + "].every(function(element){ return ";
             case match_none:
                 anyAllNoneContains = 2;
                 isMatch = true;
-                return isSiblingIterable(element, true) ? returnValue + ".every(function(element){ return "
-                        : "[" + returnValue + "].every(function(element){ return ";
+                return isIterableOrField(metadata.left().findFirst().get()) ? returnValueTab[0] + ".every(function" +
+                        "(element){" +
+                        " return "
+                        : "[" + returnValueTab[0] + "].every(function(element){ return ";
+            case any_match_values:
+                anyAllNoneContains = 0;
+                isMatch = true;
+                return isIterableOrField(metadata.left().findFirst().get()) ? returnValueTab[0] + ".some(function" +
+                        "(element){ " +
+                        "return "
+                        : "[" + returnValueTab[0] + "].some(function(element){ return ";
+            case all_match_values:
+                anyAllNoneContains = 1;
+                isMatch = true;
+                return isIterableOrField(metadata.left().findFirst().get()) ? returnValueTab[0] + ".every(function" +
+                        "(element){" +
+                        " return "
+                        : "[" + returnValueTab[0] + "].every(function(element){ return ";
+            case none_match_values:
+                anyAllNoneContains = 2;
+                isMatch = true;
+                return isIterableOrField(metadata.left().findFirst().get()) ? returnValueTab[0] + ".every(function" +
+                        "(element){" +
+                        " return "
+                        : "[" + returnValueTab[0] + "].every(function(element){ return ";
+            case count:
+                break;
+            case sum:
+                break;
+            case min:
+                break;
             case not:
-                returnValue += "!(" + returnValue + ")";
+                returnValueTab[0] += "!(" + returnValueTab[0] + ")";
                 break;
             case always_true:
-                returnValue += " true ";
+                returnValueTab[0] += " true ";
                 break;
             case always_false:
-                returnValue += " false ";
+                returnValueTab[0] += " false ";
                 break;
             case times:
-                returnValue += " * ";
+                returnValueTab[0] += " * ";
+                break;
+            case when:
                 break;
             case equals:
-                flatList = rule.metadata().flatten();
-                int indexElement = flatList.indexOf(element) - 1;
-                if ((indexElement - 1 >= 0 && flatList.get(flatList.indexOf(element) - 1).getReadable().toString().contains("LocalDate"))
-                        || isTemporalPredicate && !isDiff) {
+                if (isTemporalPredicate) {
+                    returnValueTab[0] += ".isSame(";
                     parenthesisCount++;
-                    isTemporalPredicate = true;
-                    alreadyComputed = false; //eval_plus_value
-                    return "moment(" + returnValue + ").isSame(";
                 } else {
-                    isTemporalPredicate = false;
-                    alreadyComputed = false; //reduce_doc_years_between
-                    returnValue = writeForDiff(returnValue);
-                    returnValue += " === ";
-                    String[] subListString = new String[1];
-                    subListString[0] = "";
-                    if (!isNaryPredicate) {
-                        ArrayList<Element> subFlatList = new ArrayList<>();
-                        for (int i = indexElement + 2; i < flatList.size(); i++) {
-                            subFlatList.add(flatList.get(i));
-                        }
-                        subFlatList.forEach(elt -> subListString[0] = writeElement(elt, subListString[0]));
-                        subListString[0] = writeForDiff(subListString[0]);
-                        isFinished = true;
-                    } else {
-                        isNaryPredicate = false;
-                    }
-                    return returnValue + subListString[0];
+                    returnValueTab[0] += " === ";
                 }
+                break;
             case not_equals:
-                returnValue += " != ";
+                returnValueTab[0] += " != ";
                 break;
             case is_null:
-                returnValue += " === (null || undefined || \"\")";
+                returnValueTab[0] += " === (null || undefined || \"\")";
                 break;
             case is_not_null:
-                returnValue += " !== (null && undefined && \"\")";
+                returnValueTab[0] += " !== (null && undefined && \"\")";
                 break;
             case as_a_number:
-                returnValue = "Number(" + returnValue + ")";
+                returnValueTab[0] = "Number(" + returnValueTab[0] + ")";
                 break;
             case as_string:
-                returnValue = "String(" + returnValue + ")";
+                returnValueTab[0] = "String(" + returnValueTab[0] + ")";
+                break;
+            case as:
+                break;
+            case with:
                 break;
             case minus:
                 isTemporalPredicate = true;
+                returnValueTab[0] += ".subtract(";
+                deque = ((LeafMetadata) metadata.right().findFirst().get()).elements();
+                returnValueTab[0] += writeElement(deque.pollFirst(), "", metadata) + ", ";
+                returnValueTab[0] += writeElement(deque.pollFirst(), "", metadata);
                 alreadyComputed = true;
-                flatList = rule.metadata().flatten();
-                numValue = flatList.get(flatList.indexOf(element) + 1).toString();
-                if (!isNumeric(numValue)) {
-                    numValue = "moment(" + numValue + ")"; // eval_minus*
-                }
-                tempValue = flatList.get(flatList.indexOf(element) + 2).toString();
-                if (isBeforeOrAfter) {
-                    isBeforeOrAfter = false;
-                    parenthesisCount--;
-                    returnValue += ")";
-                }
-                return returnValue + ".subtract(" + numValue + ",\'" + tempValue + "\')";
+                return returnValueTab[0] + ")";
             case plus:
                 isTemporalPredicate = true;
+                returnValueTab[0] += ".add(";
+                deque = ((LeafMetadata) metadata.right().findFirst().get()).elements();
+                returnValueTab[0] += writeElement(deque.pollFirst(), "", metadata) + ", ";
+                returnValueTab[0] += writeElement(deque.pollFirst(), "", metadata);
                 alreadyComputed = true;
-                flatList = rule.metadata().flatten();
-                numValue = flatList.get(flatList.indexOf(element) + 1).toString();
-                if (!isNumeric(numValue) && !flatList.get(flatList.indexOf(element) + 1)
-                        .getReadable().toString().contains("Integer")) {
-                    numValue = "moment(" + numValue + ")"; // eval_plus
-                }
-                tempValue = flatList.get(flatList.indexOf(element) + 2).toString();
-                if (isBeforeOrAfter) {
-                    isBeforeOrAfter = false;
-                    parenthesisCount--;
-                    returnValue += ")";
-                }
-                return returnValue + ".add(" + numValue + ",\'" + tempValue + "\')";
+                return returnValueTab[0] + ")";
             case after:
                 isTemporalPredicate = true;
                 parenthesisCount += 2;
-                isBeforeOrAfter = true;
-                return "moment(" + returnValue + ").isAfter(moment(";
+                return "moment(" + returnValueTab[0] + ").isAfter(moment(";
             case after_or_equals:
                 isTemporalPredicate = true;
                 parenthesisCount += 2;
-                isBeforeOrAfter = true;
-                return "moment(" + returnValue + ").isSameOrAfter(moment(";
-            case age_at_months:
-                isTemporalPredicate = true;
-                isDiff = true;
-                daysMonthsYears = 1;
-                return returnValue + ".diff(";
+                return "moment(" + returnValueTab[0] + ").isSameOrAfter(moment(";
             case age_at_days:
                 isTemporalPredicate = true;
                 isDiff = true;
-                daysMonthsYears = 0;
-                return returnValue + ".diff(";
+                returnValueTab[0] += ".diff(";
+                deque = ((LeafMetadata) metadata.right().findFirst().get()).elements();
+                returnValueTab[0] += writeElement(deque.pollFirst(), "", metadata) + ", \'days\')";
+                returnValueTab[0] = writeForDiff(returnValueTab[0]);
+                isTemporalPredicate = false;
+                return returnValueTab[0];
+            case age_at_months:
+                isTemporalPredicate = true;
+                isDiff = true;
+                returnValueTab[0] += ".diff(";
+                deque = ((LeafMetadata) metadata.right().findFirst().get()).elements();
+                returnValueTab[0] += writeElement(deque.pollFirst(), "", metadata) + ", \'months\')";
+                returnValueTab[0] = writeForDiff(returnValueTab[0]);
+                isTemporalPredicate = false;
+                return returnValueTab[0];
             case age_at_years:
                 isTemporalPredicate = true;
                 isDiff = true;
-                daysMonthsYears = 2;
-                return returnValue + ".diff(";
+                returnValueTab[0] += ".diff(";
+                Metadata metaTemp = metadata.right().findFirst().get();
+                if (metaTemp.getClass().toString().contains("TemporalBiFunction")) {
+                    returnValueTab[0] += writeMetadata(metaTemp);
+                    alreadyComputed = true;
+                } else {
+                    deque = ((LeafMetadata) metaTemp).elements();
+                    returnValueTab[0] += writeElement(deque.pollFirst(), "", metadata);
+                }
+                returnValueTab[0] = writeForDiff(returnValueTab[0] + ", \'years\')");
+                isTemporalPredicate = false;
+                return returnValueTab[0];
             case before:
                 isTemporalPredicate = true;
                 parenthesisCount += 2;
-                isBeforeOrAfter = true;
-                return "moment(" + returnValue + ").isBefore(moment(";
+                return "moment(" + returnValueTab[0] + ").isBefore(moment(";
             case before_or_equals:
                 isTemporalPredicate = true;
                 parenthesisCount += 2;
-                isBeforeOrAfter = true;
-                return "moment(" + returnValue + ").isSameOrBefore(moment(";
+                return "moment(" + returnValueTab[0] + ").isSameOrBefore(moment(";
             case matches:
                 isMatch = true;
                 useRegexp = true;
-                return returnValue + ".match(/";
+                return returnValueTab[0] + ".match(/";
             case contains:
                 anyAllNoneContains = 3;
                 String containString;
-                if (isSiblingIterable(element, true)) {
-                    if (isSiblingIterable(element, false)) {
+                if (!metadata.getClass().toString().contains("StringFunction")) {
+                    if (!metadata.right().findFirst().get().getClass().toString().contains("String")) {
                         anyAllNoneContains = 1;
-                        containString = returnValue + ".every(function(element){ return ";
+                        containString = returnValueTab[0] + ".every(function(element){ return ";
                     } else {
                         anyAllNoneContains = 3;
-                        containString = returnValue + ".some(function(element){return element.match(";
+                        containString = returnValueTab[0] + ".some(function(element){return element.match(";
                     }
                 } else {
                     anyAllNoneContains = 3;
                     isStartsWith = true;
                     useRegexp = true;
                     isMatch = true;
-                    containString = "[" + returnValue + "].some(function(element){return element.match(/.*";
+                    containString = "[" + returnValueTab[0] + "].some(function(element){return element.match(/.*";
                 }
                 return containString;
             case starts_with:
                 isStartsWith = true;
                 useRegexp = true;
                 isMatch = true;
-                String[] tabString = returnValue.split(" ");
+                String[] tabString = returnValueTab[0].split(" ");
                 String argString = tabString[tabString.length - 1];
-                return returnValue.replace(argString, "") + "[" + argString + "].some(function(element){ return " +
+                return returnValueTab[0].replace(argString, "") + "[" + argString + "].some(function(element){ return" +
+                        " " +
                         "element.match(/^";
             case ends_with:
                 isEndsWith = true;
                 useRegexp = true;
                 isMatch = true;
-                return "[" + returnValue + "].some(function(element){ return element.match(/.*";
+                return "[" + returnValueTab[0] + "].some(function(element){ return element.match(/.*";
             case greater_than:
-                returnValue = writeForDiff(returnValue);
-                returnValue += " > ";
+                returnValueTab[0] = writeForDiff(returnValueTab[0]);
+                returnValueTab[0] += " > ";
                 break;
             case greater_or_equals:
-                returnValue = writeForDiff(returnValue);
-                returnValue += " >= ";
+                returnValueTab[0] = writeForDiff(returnValueTab[0]);
+                returnValueTab[0] += " >= ";
+                break;
+            case xor:
                 break;
             case is:
-                returnValue += " === ";
+                returnValueTab[0] += " === ";
                 break;
             case lesser_than:
-                returnValue = writeForDiff(returnValue);
-                returnValue += " < ";
+                returnValueTab[0] = writeForDiff(returnValueTab[0]);
+                returnValueTab[0] += " < ";
                 break;
             case lesser_or_equals:
-                returnValue = writeForDiff(returnValue);
-                returnValue += " <= ";
+                returnValueTab[0] = writeForDiff(returnValueTab[0]);
+                returnValueTab[0] += " <= ";
                 break;
             case has_not_size:
-                returnValue += ".length != ";
+                returnValueTab[0] += ".length != ";
                 break;
             case has_size:
-                returnValue += ".length == ";
+                returnValueTab[0] += ".length == ";
                 break;
             case is_empty:
-                returnValue += ".length == 0";
+                returnValueTab[0] += ".length == 0";
                 break;
             case is_not_empty:
-                returnValue += ".length != 0";
+                returnValueTab[0] += ".length != 0";
                 break;
             case length_is:
-                returnValue += ".length ";
+                returnValueTab[0] += ".length ";
+                break;
+            case lambda:
                 break;
             case today:
                 isTemporalPredicate = true;
-                tmpTodayValue = returnValue + "moment(moment().format(\"YYYY-MM-DD\"))";
+                tmpTodayValue = returnValueTab[0] + "moment(moment().format(\"YYYY-MM-DD\"))";
                 return tmpTodayValue;
             case today_plus:
                 parenthesisCount++;
                 isTemporalPredicate = true;
-                return "moment(moment().format(\"YYYY-MM-DD\")).add(";
+                returnValueTab[0] += "moment(moment().format(\"YYYY-MM-DD\")).add(";
+                deque = ((LeafMetadata) metadata.right().findFirst().get()).elements();
+                returnValueTab[0] += writeElement(deque.pollFirst(), "", metadata) + ", ";
+                returnValueTab[0] += writeElement(deque.pollFirst(), "", metadata);
+                alreadyComputed = true;
+                return returnValueTab[0] + ")";
             case today_minus:
                 parenthesisCount++;
                 isTemporalPredicate = true;
-                return "moment(moment().format(\"YYYY-MM-DD\")).subtract(";
+                returnValueTab[0] += "moment(moment().format(\"YYYY-MM-DD\")).subtract(";
+                deque = ((LeafMetadata) metadata.right().findFirst().get()).elements();
+                returnValueTab[0] += writeElement(deque.pollFirst(), "", metadata) + ", ";
+                returnValueTab[0] += writeElement(deque.pollFirst(), "", metadata);
+                alreadyComputed = true;
+                return returnValueTab[0] + ")";
             case first_day_of_this_month:
                 isTemporalPredicate = true;
-                tmpTodayValue = returnValue + "moment(moment().format(\"YYYY-MM-DD\")).startOf('month')";
+                tmpTodayValue = returnValueTab[0] + "moment(moment().format(\"YYYY-MM-DD\")).startOf('month')";
                 return tmpTodayValue;
             case first_day_of_this_year:
                 isTemporalPredicate = true;
-                tmpTodayValue = returnValue + "moment(moment().format(\"YYYY-MM-DD\")).startOf('year')";
+                tmpTodayValue = returnValueTab[0] + "moment(moment().format(\"YYYY-MM-DD\")).startOf('year')";
                 return tmpTodayValue;
             case last_day_of_this_month:
                 isTemporalPredicate = true;
-                tmpTodayValue = returnValue + "moment(moment().format(\"YYYY-MM-DD\")).endOf('month')";
+                tmpTodayValue = returnValueTab[0] + "moment(moment().format(\"YYYY-MM-DD\")).endOf('month')";
                 return tmpTodayValue;
             case last_day_of_this_year:
                 isTemporalPredicate = true;
-                tmpTodayValue = returnValue + "moment(moment().format(\"YYYY-MM-DD\")).endOf('month')";
+                tmpTodayValue = returnValueTab[0] + "moment(moment().format(\"YYYY-MM-DD\")).endOf('month')";
                 return tmpTodayValue;
             case first_day_of_month:
                 isTemporalPredicate = true;
-                tmpTodayValue = returnValue + ".startOf('month')";
+                tmpTodayValue = returnValueTab[0] + ".startOf('month')";
                 return tmpTodayValue;
             case first_day_of_next_month:
                 isTemporalPredicate = true;
-                tmpTodayValue = returnValue + "moment(moment().format(\"YYYY-MM-DD\")).add(1,'month').startOf('month')";
+                tmpTodayValue = returnValueTab[0] + "moment(moment().format(\"YYYY-MM-DD\")).add(1,'month').startOf" +
+                        "('month')";
                 return tmpTodayValue;
             case first_day_of_year:
                 isTemporalPredicate = true;
-                tmpTodayValue = returnValue + ".startOf('year')";
+                tmpTodayValue = returnValueTab[0] + ".startOf('year')";
                 return tmpTodayValue;
             case first_day_of_next_year:
                 isTemporalPredicate = true;
-                tmpTodayValue = returnValue + "moment(moment().format(\"YYYY-MM-DD\")).add(1,'year').startOf('year')";
+                tmpTodayValue = returnValueTab[0] + "moment(moment().format(\"YYYY-MM-DD\")).add(1,'year').startOf" +
+                        "('year')";
                 return tmpTodayValue;
             case last_day_of_month:
                 isTemporalPredicate = true;
-                tmpTodayValue = returnValue + ".endOf('month')";
+                tmpTodayValue = returnValueTab[0] + ".endOf('month')";
                 return tmpTodayValue;
             case last_day_of_year:
                 isTemporalPredicate = true;
-                tmpTodayValue = returnValue + ".endOf('year')";
+                tmpTodayValue = returnValueTab[0] + ".endOf('year')";
                 return tmpTodayValue;
         }
-        return returnValue;
+        return returnValueTab[0];
     }
 
     private String writeForDiff(String tmpTodayValue) {
         if (isDiff) {
-            if (daysMonthsYears == 1) {
-                tmpTodayValue = "Math.round(Math.abs(" + tmpTodayValue + ",\'months\')))";
-            } else if (daysMonthsYears == 2) {
-                tmpTodayValue = "Math.round(Math.abs(" + tmpTodayValue + ",\'years\')))";
-            } else if (daysMonthsYears == 0) {
-                tmpTodayValue = "Math.round(Math.abs(" + tmpTodayValue + ",\'days\')))";
-            }
-            daysMonthsYears = -1;
+            tmpTodayValue = "Math.round(Math.abs(" + tmpTodayValue + "))";
             isDiff = false;
             isTemporalPredicate = false;
         }
@@ -601,20 +645,60 @@ public class AstJavascriptWriter {
         returnValue[0] = "";
         UnaryMetadata unaryMetadata = (UnaryMetadata) metadata;
         DefaultOperator operator = (DefaultOperator) unaryMetadata.getOperator();
-        switch (operator) {
-            case not:
-                // test eval_not_second_false
-                returnValue[0] += "!(";
-                unaryMetadata.children().forEach(elt -> returnValue[0] += writeMetadata(elt));
-                returnValue[0] += ")";
-                break;
+        if (operator == not) {
+            // test eval_not_second_false
+            returnValue[0] += "!(";
+            unaryMetadata.children().forEach(elt -> returnValue[0] += writeMetadata(elt));
+            returnValue[0] += ")";
+        } else {
+            unaryMetadata.children().forEach(elt -> returnValue[0] += writeMetadata(elt));
+            returnValue[0] = writeOperator(operator, returnValue[0], unaryMetadata);
         }
         return returnValue[0];
     }
 
-    private String writeValue(Element element, String returnValue) {
+    private String writeValue(Element element, String returnValue, Metadata metadata) {
         if (!alreadyComputed) {
-            if (element.getType() == ElementType.STRING_VALUE) {
+            if (anyAllNoneContains != -1) {
+                switch (anyAllNoneContains) {
+                    case 0:
+                        anyAllNoneContains = -1;
+                        returnValue += (isIterableOrField(metadata) ? writeValue(element, returnValue, metadata) :
+                                "[" + writeValue(element, returnValue, metadata) + "]") + ".indexOf(element) >= " +
+                                "0 ;})";
+                        isMatch = false;
+                        break;
+                    case 1:
+                        anyAllNoneContains = -1;
+                        if (isMatch) {
+                            returnValue += (isIterableOrField(metadata) ? writeValue(element, returnValue, metadata) :
+                                    "[" + writeValue(element, returnValue, metadata) + "]") + ".every(function" +
+                                    "(elt){ return elt.match(element);});})";
+                        } else {
+                            returnValue = (isIterableOrField(metadata) ? writeValue(element, returnValue, metadata) :
+                                    "[" + writeValue(element, returnValue, metadata) + "]") + ".some(function(elt){ " +
+                                    "return elt.match(element);});})";
+                        }
+                        isMatch = false;
+                        break;
+                    case 2:
+                        anyAllNoneContains = -1;
+                        returnValue += (isIterableOrField(metadata) ? writeValue(element, returnValue, metadata) :
+                                "[" + writeValue(element, returnValue, metadata) + "]") + ".indexOf(element) < 0;})";
+                        isMatch = false;
+                        break;
+                    case 3:
+                        anyAllNoneContains = -1;
+                        if (useRegexp) {
+                            returnValue += element.toString() + ".*/);})";
+                            useRegexp = false;
+                        } else {
+                            returnValue += ");})";
+                        }
+                    default:
+                        break;
+                }
+            } else if (element.getType() == ElementType.STRING_VALUE) {
                 if (isTemporalPredicate) {
                     returnValue = "moment(\'" + element.toString() + "\')";
                     if (isDiff) {
@@ -753,24 +837,14 @@ public class AstJavascriptWriter {
     /**
      * allow us to know if the element directly before or after the called element is an iterable field or value
      *
-     * @param element the element around which we search the iterable
-     * @param before  true : before; false : after
      * @return true if the sibling before/after the element is an iterable
      */
-    private boolean isSiblingIterable(Element element, boolean before) {
-        ArrayList<Element> flatData = (ArrayList<Element>) rule.metadata().flatten();
-        int elementIndex = flatData.indexOf(element);
-        if (elementIndex > 0 && elementIndex < flatData.size() - 1) {
-            if (before) {
-                if (flatData.get(elementIndex - 1).getReadable().toString().contains("Iterable")) {
-                    return true;
-                }
-            } else {
-                Element eltTmp = flatData.get(elementIndex + 1);
-                if (eltTmp.getReadable().toString().contains("Iterable") || eltTmp.toString().startsWith(" : ")) {
-                    return true;
-                }
-            }
+    private boolean isIterableOrField(Metadata metadata) {
+        if (metadata.readable().startsWith(": ") || metadata.readable().startsWith(" : ")) {
+            return true;
+        } else if (((Element) ((LeafMetadata) metadata).elements().getFirst()).getReadable().toString().contains(
+                "Iterable")) {
+            return true;
         }
         return false;
     }

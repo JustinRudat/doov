@@ -3,7 +3,6 @@ package io.doov.js.ast;
 import static io.doov.core.dsl.DOOV.count;
 import static io.doov.core.dsl.DOOV.matchAll;
 import static io.doov.core.dsl.DOOV.when;
-import static io.doov.core.dsl.time.LocalDateSuppliers.firstDayOfThisYear;
 import static io.doov.core.dsl.time.LocalDateSuppliers.today;
 import static io.doov.js.ast.ScriptEngineFactory.fieldModelToJS;
 import static java.time.temporal.ChronoUnit.MONTHS;
@@ -158,34 +157,6 @@ public class ComplexConditionJavascriptTest {
         assertEquals("true", result);
     }
 
-    //@Disabled("no distinction between days, month and year. age_at -> yearBetween by default")
-    @Test
-    void eval_daysBetween_eq() throws ScriptException {
-        rule = when(today().daysBetween(firstDayOfThisYear()).eq(firstDayOfThisYear().daysBetween(today()))).validate().withShortCircuit(false);
-        writer.writeRule(rule);
-        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
-        result = engine.eval(request).toString();
-        assertEquals("true", result);
-    }
-
-    @Test
-    void eval_monthsBetween_eq() throws ScriptException {
-        rule = when(today().monthsBetween(firstDayOfThisYear()).eq(firstDayOfThisYear().monthsBetween(today()))).validate().withShortCircuit(false);
-        writer.writeRule(rule);
-        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
-        result = engine.eval(request).toString();
-        assertEquals("true", result);
-    }
-
-    @Test
-    void eval_yearsBetween_eq() throws ScriptException {
-        rule = when(today().yearsBetween(firstDayOfThisYear()).eq(0)).validate().withShortCircuit(false);
-        writer.writeRule(rule);
-        request = new String(ops.toByteArray(), Charset.forName("UTF-8"));
-        result = engine.eval(request).toString();
-        assertEquals("true", result);
-    }
-
     @Test
     void eval_user_names() throws ScriptException {
         rule = when(count(userFirstName.isNotNull(),
@@ -199,7 +170,7 @@ public class ComplexConditionJavascriptTest {
 
     @Test
     void eval_complex_request() throws ScriptException {
-        rule = when(count(userFirstName.anyMatch("test", "note", "error", "name"), userLastName.matches("[A-Z]"),
+        rule = when(count(userFirstName.anyMatch("test", "note", "error", "name"), userLastName.matches("[A-Z]+"),
                 userBirthdate.ageAt(today()).greaterOrEquals(18)).eq(3)
                 .and(today().plus(2, YEARS).minus(12, MONTHS).minus(1, YEARS).eq(today())))
                 .validate();
