@@ -62,24 +62,67 @@ public class TemporalBiFunctionMetadata extends BinaryPredicateMetadata {
                 new TemporalFunctionMetadata(FIELD_PREDICATE).field(field2).temporalUnit(unit));
     }
 
-    // age at
+    // age at years
 
-    public static TemporalBiFunctionMetadata ageAtValueMetadata(DefaultCondition<?> condition, Object value) {
-        return new TemporalBiFunctionMetadata(condition.getMetadata(), age_at, valueMetadata(value));
+    public static TemporalBiFunctionMetadata ageAtYearsValueMetadata(DefaultCondition<?> condition, Object value) {
+        return new TemporalBiFunctionMetadata(condition.getMetadata(), age_at_years, valueMetadata(value));
     }
 
-    public static TemporalBiFunctionMetadata ageAtTemporalFieldMetadata(DefaultCondition<?> condition,
+    public static TemporalBiFunctionMetadata ageAtYearsTemporalFieldMetadata(DefaultCondition<?> condition,
                                                                         DslField<?> field) {
-        return new TemporalBiFunctionMetadata(condition.getMetadata(), age_at, fieldMetadata(field));
+        return new TemporalBiFunctionMetadata(condition.getMetadata(), age_at_years, fieldMetadata(field));
     }
 
-    public static TemporalBiFunctionMetadata ageAtTemporalConditionMetadata(DefaultCondition<?> c1,
+    public static TemporalBiFunctionMetadata ageAtYearsTemporalConditionMetadata(DefaultCondition<?> c1,
             DefaultCondition<?> c2) {
-        return new TemporalBiFunctionMetadata(c1.getMetadata(), age_at, c2.getMetadata());
+        return new TemporalBiFunctionMetadata(c1.getMetadata(), age_at_years, c2.getMetadata());
     }
 
-    public static TemporalBiFunctionMetadata ageAtSupplierMetadata(DefaultCondition<?> condition, Supplier<?> supplier) {
-        return new TemporalBiFunctionMetadata(condition.getMetadata(), age_at, valueMetadata(supplier));
+    public static TemporalBiFunctionMetadata ageAtYearsSupplierMetadata(DefaultCondition<?> condition,
+            Supplier<?> supplier) {
+        return new TemporalBiFunctionMetadata(condition.getMetadata(), age_at_years, valueMetadata(supplier));
+    }
+
+    // age at days
+
+    public static TemporalBiFunctionMetadata ageAtDaysValueMetadata(DefaultCondition<?> condition, Object value) {
+        return new TemporalBiFunctionMetadata(condition.getMetadata(), age_at_days, valueMetadata(value));
+    }
+
+    public static TemporalBiFunctionMetadata ageAtDaysTemporalFieldMetadata(DefaultCondition<?> condition,
+            DslField<?> field) {
+        return new TemporalBiFunctionMetadata(condition.getMetadata(), age_at_days, fieldMetadata(field));
+    }
+
+    public static TemporalBiFunctionMetadata ageAtDaysTemporalConditionMetadata(DefaultCondition<?> c1,
+            DefaultCondition<?> c2) {
+        return new TemporalBiFunctionMetadata(c1.getMetadata(), age_at_days, c2.getMetadata());
+    }
+
+    public static TemporalBiFunctionMetadata ageAtDaysSupplierMetadata(DefaultCondition<?> condition,
+            Supplier<?> supplier) {
+        return new TemporalBiFunctionMetadata(condition.getMetadata(), age_at_days, valueMetadata(supplier));
+    }
+
+    // age at months
+
+    public static TemporalBiFunctionMetadata ageAtMonthsValueMetadata(DefaultCondition<?> condition, Object value) {
+        return new TemporalBiFunctionMetadata(condition.getMetadata(), age_at_months, valueMetadata(value));
+    }
+
+    public static TemporalBiFunctionMetadata ageAtMonthsTemporalFieldMetadata(DefaultCondition<?> condition,
+            DslField<?> field) {
+        return new TemporalBiFunctionMetadata(condition.getMetadata(), age_at_months, fieldMetadata(field));
+    }
+
+    public static TemporalBiFunctionMetadata ageAtMonthsTemporalConditionMetadata(DefaultCondition<?> c1,
+            DefaultCondition<?> c2) {
+        return new TemporalBiFunctionMetadata(c1.getMetadata(), age_at_months, c2.getMetadata());
+    }
+
+    public static TemporalBiFunctionMetadata ageAtMonthsSupplierMetadata(DefaultCondition<?> condition,
+            Supplier<?> supplier) {
+        return new TemporalBiFunctionMetadata(condition.getMetadata(), age_at_months, valueMetadata(supplier));
     }
 
     // after
